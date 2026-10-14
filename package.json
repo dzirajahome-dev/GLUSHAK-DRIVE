@@ -9,5 +9,8 @@
     "jpeg-js": "^0.4.4",
     "nsfwjs": "^4.3.0",
     "pngjs": "^7.0.0"
+  },
+  "allowScripts": {
+    "core-js@3.29.1": true
   }
 }
