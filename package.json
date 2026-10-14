@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "dev": "node server.cjs",
+    "migrate:orders": "node scripts/migrate-orders-to-supabase.cjs"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "geoip-lite": "^2.0.3",
+    "jpeg-js": "^0.4.4",
+    "nsfwjs": "^4.3.0",
+    "pngjs": "^7.0.0"
+  }
+}

@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="pl">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Studio | GLUSHAK DRIVE</title>
+		<style>
+			:root { color-scheme: dark; font-family: Arial, sans-serif; background: #000; color: #f4f3f1; }
+			* { box-sizing: border-box; }
+			body { position: relative; isolation: isolate; min-width: 320px; min-height: 100vh; margin: 0; background: #000; }
+			body::before { position: fixed; z-index: -1; inset: -24%; pointer-events: none; background: radial-gradient(ellipse at 18% 28%, #ff173b8c, transparent 38%), radial-gradient(ellipse at 77% 31%, #7428ff82, transparent 42%), radial-gradient(ellipse at 54% 78%, #00d9b878, transparent 40%), radial-gradient(ellipse at 91% 82%, #00aaff55, transparent 38%); filter: blur(64px) saturate(150%); opacity: .8; content: ""; animation: rgb-flow 32s ease-in-out infinite alternate; }
+			@keyframes rgb-flow { 0% { transform: translate3d(-4%, -2%, 0) scale(1) rotate(-5deg); filter: blur(64px) saturate(150%) hue-rotate(0deg); } 50% { transform: translate3d(3%, 3%, 0) scale(1.08) rotate(5deg); filter: blur(72px) saturate(165%) hue-rotate(90deg); } 100% { transform: translate3d(-1%, 4%, 0) scale(1.03) rotate(-3deg); filter: blur(66px) saturate(155%) hue-rotate(210deg); } }
+			button, a { font: inherit; }
+			.shell { width: min(100% - 40px, 1160px); margin: 0 auto; padding: 28px 0 56px; }
+			.locale-control { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+			.language-select { width: min(180px, 100%); min-height: 34px; padding: 0 8px; border: 1px solid #ffffff30; border-radius: 5px; background: #17181e; color: #f4f3f1; font: 700 11px Arial, sans-serif; }
+			.language-select:focus-visible { outline: 2px solid #e5233e; outline-offset: 2px; }
+			.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+			.topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 26px; border-bottom: 1px solid #ffffff17; }
+			.brand { display: flex; align-items: center; gap: 12px; }
+			.brand img { width: 42px; height: 42px; border: 2px solid #e5233e; border-radius: 50%; object-fit: cover; }
+			.brand strong { display: block; font-size: 14px; letter-spacing: .4px; }
+			.brand span { display: block; margin-top: 4px; color: #858790; font-size: 11px; }
+			.top-actions { display: flex; align-items: center; gap: 16px; }
+			.back-link { color: #c4c5ca; font-size: 13px; text-decoration: none; }
+			.back-link:hover { color: #fff; }
+			.refresh { min-height: 38px; padding: 0 13px; border: 1px solid #ffffff25; border-radius: 5px; background: #17181e; color: #f4f3f1; font-size: 12px; font-weight: 700; cursor: pointer; }
+			.refresh:hover { border-color: #e5233e; }
+			.refresh:focus-visible, .back-link:focus-visible { outline: 2px solid #e5233e; outline-offset: 3px; }
+			.page-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 30px 0 22px; }
+			h1 { margin: 0; font-size: 30px; line-height: 1.1; letter-spacing: .2px; }
+			.page-heading p { margin: 7px 0 0; color: #93959e; font-size: 13px; }
+			.live { display: inline-flex; align-items: center; gap: 8px; color: #a6a8b0; font-size: 11px; }
+			.live::before { width: 7px; height: 7px; border-radius: 50%; background: #63c995; content: ""; box-shadow: 0 0 12px #63c99566; }
+			.studio-tabs { display: flex; gap: 8px; margin: 0 0 18px; padding-bottom: 10px; overflow-x: auto; border-bottom: 1px solid #ffffff17; }
+			.studio-tab { flex: 0 0 auto; min-height: 40px; padding: 0 15px; border: 1px solid #ffffff20; border-radius: 5px; background: #14151a; color: #aeb0b7; font-size: 12px; font-weight: 700; cursor: pointer; }
+			.studio-tab[aria-selected="true"] { border-color: #e5233e; background: #e5233e; color: #fff; }
+			.studio-tab:focus-visible { outline: 2px solid #ff8795; outline-offset: 2px; }
+			.studio-view[hidden] { display: none !important; }
+			.studio-view > .admin-work { margin-top: 0; }
+			.studio-view#view-support > .admin-work { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+			.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+			.metric, .panel { border: 1px solid #ffffff14; border-radius: 6px; background: #14151a; }
+			.metric { min-height: 116px; padding: 17px 18px; }
+			.metric-label { color: #a0a1a9; font-size: 12px; }
+			.metric-value { display: block; margin-top: 17px; color: #fff; font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+			.metric-detail { display: block; margin-top: 8px; color: #737680; font-size: 11px; }
+			.content-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr); gap: 12px; margin-top: 12px; }
+			.panel { min-width: 0; padding: 18px; }
+			.panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+			h2 { margin: 0; font-size: 14px; font-weight: 700; }
+			.panel-note { color: #777983; font-size: 11px; }
+			.chart { min-height: 156px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: end; gap: 12px; padding-top: 10px; }
+			.chart-day { min-width: 0; display: grid; grid-template-rows: 18px 1fr 18px; gap: 8px; height: 145px; text-align: center; }
+			.chart-count, .chart-label { color: #888a94; font-size: 10px; font-variant-numeric: tabular-nums; }
+			.chart-track { display: flex; align-items: end; height: 100%; border-bottom: 1px solid #ffffff18; }
+			.chart-bar { width: 100%; min-height: 3px; border-radius: 3px 3px 0 0; background: linear-gradient(0deg, #a9152b, #e5233e); transition: height 250ms ease; }
+			.breakdown { display: grid; gap: 16px; }
+			.breakdown-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; align-items: center; }
+			.breakdown-label { overflow: hidden; color: #d4d5d9; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+			.breakdown-count { color: #a2a4ac; font-size: 11px; font-variant-numeric: tabular-nums; }
+			.breakdown-track { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 2px; background: #ffffff13; }
+			.breakdown-bar { height: 100%; min-width: 2px; border-radius: inherit; background: #e5233e; }
+			.lower-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, .8fr) minmax(0, .8fr) minmax(0, 1.5fr); gap: 12px; margin-top: 12px; }
+			.admin-work { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, .8fr) minmax(260px, .9fr); gap: 12px; margin-top: 12px; }
+			.admin-order-list { display: grid; gap: 9px; max-height: 580px; overflow: auto; }
+			.order-filters { display: grid; grid-template-columns: minmax(180px, 1.4fr) repeat(3, minmax(120px, 1fr)); gap: 8px; margin-bottom: 12px; }
+			.order-filters input, .order-filters select { min-width: 0; min-height: 38px; padding: 0 9px; border: 1px solid #ffffff25; border-radius: 4px; background: #0e0f13; color: #f4f3f1; font: inherit; font-size: 11px; }
+			.order-filters input:focus, .order-filters select:focus { border-color: #e5233e; outline: 2px solid #e5233e55; }
+			.admin-order-quantity { margin: 0 0 10px; color: #aeb0b7; font-size: 11px; }
+			.admin-order-total { margin: 0 0 10px; color: #f1d58a; font-size: 11px; font-weight: 700; }
+			@media (max-width: 760px) { .order-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+			.admin-order { padding: 13px; border: 1px solid #ffffff15; border-radius: 4px; background: #101115; }
+			.admin-comments { display: grid; gap: 9px; max-height: 680px; overflow: auto; }
+			.admin-comment { padding: 13px; border: 1px solid #ffffff15; border-radius: 4px; background: #101115; }
+			.admin-comment-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 14px; color: #f0f0f2; font-size: 12px; font-weight: 700; }
+			.admin-comment-email { display: block; margin-top: 5px; color: #b7c8ff; font-size: 11px; font-weight: 400; overflow-wrap: anywhere; }
+			.admin-comment-email a { color: inherit; text-decoration: none; }
+			.admin-comment-email a:hover { color: #fff; text-decoration: underline; }
+			.admin-comment time { color: #93959e; font-size: 10px; font-weight: 400; }
+			.admin-comment-message { margin: 10px 0 0; color: #d7d7da; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+			.admin-order-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+			.admin-customer { color: #f0f0f2; font-size: 12px; font-weight: 700; }
+			.admin-customer-email { display: block; margin-top: 6px; color: #bfc1c9; font-size: 11px; font-weight: 400; overflow-wrap: anywhere; }
+			.admin-customer-email a { color: #b7c8ff; text-decoration: none; }
+			.admin-customer-email a:hover { color: #fff; text-decoration: underline; }
+			.admin-order time { color: #8f919a; font-size: 10px; white-space: nowrap; }
+			.admin-message { margin: 12px 0; color: #d9dade; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+			.admin-order-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid #ffffff12; }
+			.admin-order-file { color: #ff7d8c; font-size: 11px; text-decoration: none; overflow-wrap: anywhere; }
+			.admin-order-file:hover { color: #fff; }
+			.status-editor { display: flex; align-items: center; gap: 7px; }
+			.status-editor select, .payment-form input, .payment-form select { min-height: 36px; padding: 0 9px; border: 1px solid #ffffff25; border-radius: 4px; background: #0e0f13; color: #f4f3f1; font: inherit; font-size: 11px; }
+			.status-editor button { min-height: 36px; padding: 0 10px; border: 1px solid #e5233e; border-radius: 4px; background: #e5233e; color: #fff; font-size: 10px; font-weight: 700; cursor: pointer; }
+			.payment-form { display: grid; gap: 12px; }
+			.payment-form label { display: grid; gap: 6px; color: #aeb0b7; font-size: 11px; }
+			.payment-form input, .payment-form select { width: 100%; min-height: 41px; font-size: 12px; }
+			.payment-form .support-toggle { display: flex; align-items: center; gap: 10px; }
+			.payment-form .support-toggle input { width: 20px; min-height: 20px; margin: 0; accent-color: #e5233e; }
+			.payment-form input:focus, .payment-form select:focus, .status-editor select:focus { border-color: #e5233e; outline: 2px solid #e5233e55; }
+			.payment-submit { min-height: 41px; border: 0; border-radius: 4px; background: #e5233e; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; }
+			.payment-submit:hover { background: #c91d34; }
+			.admin-feedback { min-height: 16px; color: #83d5aa; font-size: 11px; line-height: 1.5; }
+			.admin-feedback.error { color: #ff8795; }
+			.activity { width: 100%; border-collapse: collapse; text-align: left; }
+			.activity th { padding: 0 8px 11px; color: #777983; font-size: 10px; font-weight: 700; }
+			.activity td { padding: 11px 8px; border-top: 1px solid #ffffff12; color: #d4d5d9; font-size: 11px; vertical-align: middle; }
+			.activity td:first-child, .activity th:first-child { padding-left: 0; }
+			.activity time { color: #9a9ca5; white-space: nowrap; }
+			.event-type { display: inline-flex; align-items: center; gap: 7px; }
+			.event-type::before { width: 6px; height: 6px; border-radius: 50%; background: #e5233e; content: ""; }
+			.event-type.click::before { background: #65c99a; }
+			.empty { padding: 18px 0; color: #777983; font-size: 12px; line-height: 1.6; }
+			.privacy { margin: 20px 0 0; color: #6f717b; font-size: 11px; line-height: 1.6; }
+			@media (max-width: 760px) {
+				.shell { width: min(100% - 28px, 1160px); padding-top: 18px; }
+				.metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+				.metric { min-height: 102px; padding: 14px; }
+				.metric-value { margin-top: 13px; font-size: 27px; }
+				.content-grid, .lower-grid, .admin-work { grid-template-columns: 1fr; gap: 9px; margin-top: 9px; }
+				.studio-view#view-support > .admin-work { grid-template-columns: 1fr; }
+				.panel { padding: 15px; }
+				.page-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+			}
+			html[data-theme="light"] .studio-tabs { border-color: #00000020; }
+			html[data-theme="light"] .studio-tab { border-color: #00000020; background: #fff; color: #454750; }
+			html[data-theme="light"] .studio-tab[aria-selected="true"] { border-color: #e5233e; background: #e5233e; color: #fff; }
+			@media (min-width: 761px) and (max-width: 1000px) {
+				.lower-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+				.lower-grid > :last-child { grid-column: 1 / -1; }
+			}
+			@media (max-width: 420px) {
+				.shell { width: min(100% - 24px, 1160px); }
+				.locale-control { margin-bottom: 10px; }
+				.language-select { width: 100%; }
+				.topbar { align-items: flex-start; }
+				.top-actions { align-items: flex-end; flex-direction: column-reverse; gap: 9px; }
+				.back-link { font-size: 11px; }
+				.refresh { min-height: 34px; }
+				.metric-label { font-size: 11px; }
+				.chart { gap: 7px; }
+				.activity th, .activity td { padding-right: 5px; padding-left: 5px; font-size: 10px; }
+			}
+			@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } body::before { animation: none; } }
+		</style>
+	</head>
+	<body>
+		<main class="shell">
+			<div class="locale-control"><label class="visually-hidden" for="language-select" data-i18n="language_label">Język</label><select class="language-select" id="language-select" aria-label="Język" data-i18n-aria="language_label"><option value="pl">Polski</option><option value="en">English</option><option value="uk">Українська</option><option value="de">Deutsch</option><option value="es">Español</option><option value="fr">Français</option><option value="it">Italiano</option><option value="pt">Português</option><option value="ru">Русский</option><option value="zh">中文</option></select></div>
+			<header class="topbar">
+				<div class="brand">
+					<img src="/channel-avatar.jpg" alt="" />
+					<div><strong>GLUSHAK DRIVE</strong><span data-i18n="studio_owner">STUDIO · WIDOK WŁAŚCICIELA</span></div>
+				</div>
+				<div class="top-actions">
+					<a class="back-link" href="/" data-i18n="home_link">← Strona główna</a>
+					<button class="refresh" id="refresh" type="button" data-i18n="refresh_data">Odśwież dane</button>
+				</div>
+			</header>
+			<section class="page-heading">
+				<div><h1>Studio</h1><p data-i18n="studio_subtitle">Ruch na stronie i kliknięcia w media społecznościowe</p></div>
+				<span class="live" id="status" data-i18n="updating">Dane aktualizują się co 15 s</span>
+			</section>
+			<nav class="studio-tabs" role="tablist" aria-label="Sekcje Studio" data-i18n-aria="studio_sections">
+				<button class="studio-tab" id="tab-analytics" type="button" role="tab" aria-selected="true" aria-controls="view-analytics" tabindex="0" data-view="analytics" data-i18n="studio_analytics">Analityka</button>
+				<button class="studio-tab" id="tab-orders" type="button" role="tab" aria-selected="false" aria-controls="view-orders" tabindex="-1" data-view="orders" data-i18n="studio_orders">Zamówienia i płatności</button>
+				<button class="studio-tab" id="tab-order-settings" type="button" role="tab" aria-selected="false" aria-controls="view-order-settings" tabindex="-1" data-view="order-settings" data-i18n="studio_order_settings">Ustawienia zamówień</button>
+				<button class="studio-tab" id="tab-comments" type="button" role="tab" aria-selected="false" aria-controls="view-comments" tabindex="-1" data-view="comments" data-i18n="studio_comments">Komentarze</button>
+				<button class="studio-tab" id="tab-support" type="button" role="tab" aria-selected="false" aria-controls="view-support" tabindex="-1" data-view="support" data-i18n="studio_support">Wsparcie i ustawienia</button>
+			</nav>
+			<section class="studio-view" id="view-analytics" role="tabpanel" aria-labelledby="tab-analytics" tabindex="0">
+			<section class="metrics" aria-label="Podsumowanie ruchu" data-i18n-aria="traffic_summary">
+				<article class="metric"><span class="metric-label" data-i18n="views_label">Odsłony</span><strong class="metric-value" id="views">0</strong><span class="metric-detail" data-i18n="since_start">od początku zbierania</span></article>
+				<article class="metric"><span class="metric-label" data-i18n="sessions_label">Sesje</span><strong class="metric-value" id="sessions">0</strong><span class="metric-detail" data-i18n="estimated_visits">przybliżona liczba odwiedzin</span></article>
+				<article class="metric"><span class="metric-label" data-i18n="social_clicks">Kliknięcia social</span><strong class="metric-value" id="clicks">0</strong><span class="metric-detail" data-i18n="platform_visits">przejścia do platform</span></article>
+				<article class="metric"><span class="metric-label" data-i18n="top_link">Najpopularniejszy link</span><strong class="metric-value" id="top-platform">—</strong><span class="metric-detail" id="top-platform-detail">brak kliknięć</span></article>
+			</section>
+			<section class="content-grid" aria-label="Wykresy ruchu" data-i18n-aria="traffic_charts">
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="views_last_week">Odsłony w ostatnich 7 dniach</h2><span class="panel-note" data-i18n="local_date">wg daty lokalnej</span></div>
+					<div class="chart" id="daily-chart" role="img" aria-label="Wykres odsłon z ostatniego tygodnia" data-i18n-aria="views_chart"></div>
+				</article>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="platform_clicks">Kliknięcia w platformy</h2><span class="panel-note" data-i18n="total">łącznie</span></div>
+					<div class="breakdown" id="platforms"></div>
+				</article>
+			</section>
+			<section class="lower-grid" aria-label="Źródła i aktywność" data-i18n-aria="sources_activity">
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="traffic_sources">Skąd wchodzą</h2><span class="panel-note" data-i18n="view_sources">źródła odsłon</span></div>
+					<div class="breakdown" id="sources"></div>
+				</article>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="devices">Urządzenia</h2><span class="panel-note" data-i18n="visit_type">typ wizyty</span></div>
+					<div class="breakdown" id="devices"></div>
+				</article>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="traffic_countries">Kraje odwiedzających</h2><span class="panel-note" data-i18n="visitor_countries">według kraju</span></div>
+					<div class="breakdown" id="countries"></div>
+				</article>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="recent_activity">Ostatnia aktywność</h2><span class="panel-note" data-i18n="up_to_20">do 20 zdarzeń</span></div>
+					<div id="activity-wrap"><p class="empty" data-i18n="loading_activity">Ładowanie aktywności…</p></div>
+				</article>
+			</section>
+			</section>
+			<section class="studio-view" id="view-orders" role="tabpanel" aria-labelledby="tab-orders" tabindex="0" hidden>
+			<section class="admin-work" aria-label="Obsługa klientów" data-i18n-aria="customer_management">
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="customer_orders">Zamówienia klientów</h2><span class="panel-note" id="admin-orders-count">0</span></div>
+					<div class="order-filters">
+						<input id="order-search" type="search" aria-label="Szukaj w treści zamówienia" data-i18n-aria="orders_search" placeholder="Szukaj w treści…" data-i18n-placeholder="orders_search_placeholder" />
+						<input id="orders-date-from" type="date" aria-label="Data od" data-i18n-aria="orders_date_from" />
+						<input id="orders-date-to" type="date" aria-label="Data do" data-i18n-aria="orders_date_to" />
+						<select id="orders-sort" aria-label="Sortuj zamówienia" data-i18n-aria="orders_sort">
+							<option value="date-desc" data-i18n="orders_sort_newest">Najnowsze</option>
+							<option value="date-asc" data-i18n="orders_sort_oldest">Najstarsze</option>
+							<option value="quantity-desc" data-i18n="orders_sort_quantity_desc">Największa ilość</option>
+							<option value="quantity-asc" data-i18n="orders_sort_quantity_asc">Najmniejsza ilość</option>
+						</select>
+					</div>
+					<div class="admin-order-list" id="admin-orders"><p class="empty" data-i18n="loading_orders">Wczytywanie zamówień…</p></div>
+				</article>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="add_payment">Dodaj opłatę</h2><span class="panel-note" data-i18n="to_account_history">do historii konta</span></div>
+					<form class="payment-form" id="payment-form">
+						<label data-i18n-label="customer_account">Konto klienta<select id="payment-user" required><option value="" data-i18n="choose_account">Wybierz konto</option></select></label>
+						<label data-i18n-label="description_label">Opis<input id="payment-description" type="text" maxlength="160" required placeholder="np. Zamówienie nr 12" data-i18n-placeholder="description_placeholder" /></label>
+						<label data-i18n-label="amount_label">Kwota (zł)<input id="payment-amount" type="number" min="0.01" max="1000000" step="0.01" required /></label>
+						<label data-i18n-label="date_label">Data<input id="payment-date" type="date" required /></label>
+						<label data-i18n-label="status_label">Status<select id="payment-status"><option value="pending" data-i18n="status_pending">Oczekuje</option><option value="paid" data-i18n="status_paid">Opłacona</option><option value="cancelled" data-i18n="status_cancelled">Anulowana</option></select></label>
+						<p class="admin-feedback" id="payment-feedback" role="status"></p>
+						<button class="payment-submit" type="submit" data-i18n="save_payment">Zapisz opłatę</button>
+					</form>
+				</article>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="studio_bank_account_title">Konto do przelewów</h2></div>
+					<p class="panel-note" data-i18n="studio_bank_account_note">Te dane będą widoczne dla klientów w instrukcjach przelewu za zamówienia i wsparcie twórcy. Zmiana dotyczy również oczekujących płatności.</p>
+					<form class="payment-form" id="support-settings-form">
+						<label data-i18n-label="support_recipient">Odbiorca<input id="support-holder-input" type="text" maxlength="80" autocomplete="name" required /></label>
+						<label data-i18n-label="support_account">Numer rachunku (IBAN)<input id="support-iban-input" type="text" maxlength="42" autocomplete="off" placeholder="PL..." required /></label>
+						<p class="admin-feedback" id="support-settings-feedback" role="status" aria-live="polite"></p>
+						<button class="payment-submit" id="support-settings-submit" type="submit" data-i18n="support_save_settings">Zapisz dane przelewu</button>
+					</form>
+				</article>
+			</section>
+			</section>
+			<section class="studio-view" id="view-comments" role="tabpanel" aria-labelledby="tab-comments" tabindex="0" hidden>
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="studio_comments_title">Komentarze społeczności</h2><span class="panel-note" data-i18n="studio_comments_note">Adresy e-mail widoczne tylko dla administratora</span></div>
+					<div class="admin-comments" id="admin-comments" aria-live="polite"><p class="empty" data-i18n="loading_comments">Ładowanie komentarzy…</p></div>
+				</article>
+			</section>
+			<section class="studio-view" id="view-order-settings" role="tabpanel" aria-labelledby="tab-order-settings" tabindex="0" hidden>
+				<section class="admin-work" aria-label="Ustawienia zamówień" data-i18n-aria="studio_order_settings">
+					<article class="panel">
+						<div class="panel-heading"><h2 data-i18n="ordering_visibility_title">Widoczność zamówień</h2></div>
+						<p class="panel-note" data-i18n="ordering_visibility_note">Wyłączenie ukryje formularz składania zamówień klientom i zablokuje nowe zgłoszenia. Historia i obsługa wcześniejszych zamówień pozostaną dostępne.</p>
+						<form class="payment-form" id="ordering-visibility-form">
+							<label class="support-toggle" data-i18n-label="ordering_enable_label">Przyjmuj nowe zamówienia<input id="ordering-enabled-input" type="checkbox" /></label>
+							<p class="admin-feedback" id="ordering-visibility-feedback" role="status" aria-live="polite"></p>
+							<button class="payment-submit" id="ordering-visibility-submit" type="submit" data-i18n="ordering_save_visibility">Zapisz widoczność zamówień</button>
+						</form>
+					</article>
+				</section>
+			</section>
+			<section class="studio-view" id="view-support" role="tabpanel" aria-labelledby="tab-support" tabindex="0" hidden>
+			<section class="admin-work" aria-label="Ustawienia wsparcia" data-i18n-aria="support_settings_title">
+				<article class="panel">
+					<div class="panel-heading"><h2 data-i18n="support_visibility_title">Widoczność przycisku wsparcia</h2></div>
+					<p class="panel-note" data-i18n="support_visibility_note">Włącz, aby pokazać przycisk na stronie. Dane rachunku pojawią się dopiero po wybraniu kwoty przez użytkownika.</p>
+					<form class="payment-form" id="support-visibility-form">
+						<label class="support-toggle" data-i18n-label="support_enable_label">Pokaż przycisk wsparcia na stronie<input id="support-enabled-input" type="checkbox" /></label>
+						<p class="admin-feedback" id="support-visibility-feedback" role="status" aria-live="polite"></p>
+						<button class="payment-submit" id="support-visibility-submit" type="submit" data-i18n="support_save_visibility">Zapisz widoczność</button>
+					</form>
+				</article>
+			</section>
+			</section>
+			<p class="privacy" data-i18n="privacy_notice">Sesja jest liczona orientacyjnie na podstawie anonimowego identyfikatora w karcie przeglądarki. Nie zbieramy adresów IP ani pełnego user-agenta. Dane są przechowywane lokalnie na tym komputerze. Statystyki obejmują tylko osoby, które wyraziły zgodę.</p>
+		</main>
+		<script src="/i18n.js"></script>
+		<script>
+			const text = (key) => window.siteText(key);
+			const studioTabs = [...document.querySelectorAll(".studio-tab")];
+			const studioViews = [...document.querySelectorAll(".studio-view")];
+			function selectStudioView(viewName, moveFocus = false) {
+				const selectedTab = studioTabs.find((tab) => tab.dataset.view === viewName) || studioTabs[0];
+				for (const tab of studioTabs) {
+					const selected = tab === selectedTab;
+					tab.setAttribute("aria-selected", String(selected));
+					tab.tabIndex = selected ? 0 : -1;
+				}
+				for (const view of studioViews) view.hidden = view.id !== selectedTab.getAttribute("aria-controls");
+				if (moveFocus) selectedTab.focus();
+			}
+			for (const tab of studioTabs) {
+				tab.addEventListener("click", () => selectStudioView(tab.dataset.view));
+				tab.addEventListener("keydown", (event) => {
+					if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+					event.preventDefault();
+					const currentIndex = studioTabs.indexOf(tab);
+					const nextIndex = event.key === "Home" ? 0
+						: event.key === "End" ? studioTabs.length - 1
+							: (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + studioTabs.length) % studioTabs.length;
+					selectStudioView(studioTabs[nextIndex].dataset.view, true);
+				});
+			}
+			selectStudioView("analytics");
+			const formatNumber = (value) => new Intl.NumberFormat(window.siteLocale()).format(value);
+			const formatFileSize = (bytes) => new Intl.NumberFormat(window.siteLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(bytes / (1024 * 1024));
+			const localizeValue = (value) => ({
+				Inne: "other_label",
+				"Bezpośrednie": "direct_source_label",
+				Nieznane: "unknown_label",
+			}[value] ? text(({ Inne: "other_label", "Bezpośrednie": "direct_source_label", Nieznane: "unknown_label" })[value]) : value);
+			const safe = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+
+			async function loadSupportSettings() {
+				const response = await fetch("/api/support/settings", { cache: "no-store" });
+				if (!response.ok) throw new Error(text("support_settings_load_error"));
+				const settings = await response.json();
+				document.getElementById("support-holder-input").value = settings.holder;
+				document.getElementById("support-iban-input").value = settings.iban;
+				document.getElementById("support-enabled-input").checked = settings.enabled;
+				const feedback = document.getElementById("support-settings-feedback");
+				feedback.className = "admin-feedback";
+				feedback.textContent = text(settings.configured ? "support_settings_configured" : "support_settings_unconfigured");
+				const visibilityFeedback = document.getElementById("support-visibility-feedback");
+				visibilityFeedback.className = "admin-feedback";
+				visibilityFeedback.textContent = text(settings.enabled ? "support_visibility_on" : "support_visibility_off");
+			}
+
+			async function loadOrderingSettings() {
+				const response = await fetch("/api/orders/settings", { cache: "no-store" });
+				if (!response.ok) throw new Error(text("ordering_settings_load_error"));
+				const settings = await response.json();
+				document.getElementById("ordering-enabled-input").checked = settings.enabled;
+				const feedback = document.getElementById("ordering-visibility-feedback");
+				feedback.className = "admin-feedback";
+				feedback.textContent = text(settings.enabled ? "ordering_visibility_on" : "ordering_visibility_off");
+			}
+
+			function renderBreakdown(elementId, items, emptyKey, formatLabel = localizeValue) {
+				const element = document.getElementById(elementId);
+				if (!items.length) {
+					element.innerHTML = `<p class="empty">${safe(text(emptyKey))}</p>`;
+					return;
+				}
+				const maximum = Math.max(...items.map((item) => item.count), 1);
+				element.innerHTML = items.map((item) => `
+					<div class="breakdown-row">
+						<span class="breakdown-label" title="${safe(formatLabel(item.label))}">${safe(formatLabel(item.label))}</span>
+						<span class="breakdown-count">${formatNumber(item.count)}</span>
+						<div class="breakdown-track"><div class="breakdown-bar" style="width:${Math.max(2, item.count / maximum * 100)}%"></div></div>
+					</div>`).join("");
+			}
+
+			function renderActivity(events) {
+				const wrapper = document.getElementById("activity-wrap");
+				if (!events.length) {
+					wrapper.innerHTML = `<p class="empty">${safe(text("empty_visits"))}</p>`;
+					return;
+				}
+				const rows = events.map((event) => {
+					const date = new Date(event.timestamp);
+					const time = new Intl.DateTimeFormat(window.siteLocale(), { dateStyle: "short", timeStyle: "short" }).format(date);
+					const isClick = event.type === "click";
+					const action = isClick ? `${text("click_event")} · ${event.target || text("social_clicks")}` : `${text("view_event")} · ${localizeValue(event.source || "Bezpośrednie")}`;
+					const context = isClick ? "—" : event.device || text("unknown_device");
+					return `<tr><td><time datetime="${safe(event.timestamp)}">${safe(time)}</time></td><td><span class="event-type${isClick ? " click" : ""}">${safe(action)}</span></td><td>${safe(context)}</td></tr>`;
+				}).join("");
+				wrapper.innerHTML = `<div style="overflow-x:auto"><table class="activity"><thead><tr><th>${safe(text("event_time"))}</th><th>${safe(text("recent_activity"))}</th><th>${safe(text("event_device"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+			}
+
+			function renderChart(days) {
+				const element = document.getElementById("daily-chart");
+				const maximum = Math.max(...days.map((day) => day.count), 1);
+				element.innerHTML = days.map((day) => {
+					const height = day.count ? Math.max(5, day.count / maximum * 100) : 2;
+					const label = day.date
+						? new Intl.DateTimeFormat(window.siteLocale(), { weekday: "short" }).format(new Date(`${day.date}T12:00:00`))
+						: day.label;
+					return `<div class="chart-day"><span class="chart-count">${formatNumber(day.count)}</span><div class="chart-track"><div class="chart-bar" style="height:${height}%"></div></div><span class="chart-label">${safe(label)}</span></div>`;
+				}).join("");
+			}
+
+			async function refreshStats() {
+				const status = document.getElementById("status");
+				try {
+					const response = await fetch("/api/stats", { cache: "no-store" });
+					if (!response.ok) throw new Error(text("update_error"));
+					const stats = await response.json();
+					document.getElementById("views").textContent = formatNumber(stats.views);
+					document.getElementById("sessions").textContent = formatNumber(stats.sessions);
+					document.getElementById("clicks").textContent = formatNumber(stats.socialClicks);
+					const topPlatform = stats.platforms[0];
+					document.getElementById("top-platform").textContent = topPlatform ? topPlatform.label : "—";
+					document.getElementById("top-platform-detail").textContent = topPlatform ? `${formatNumber(topPlatform.count)} · ${text("click_event").toLowerCase()}` : text("no_clicks");
+					renderChart(stats.dailyViews);
+					renderBreakdown("platforms", stats.platforms, "no_social_clicks");
+					renderBreakdown("sources", stats.sources, "no_sources");
+					renderBreakdown("devices", stats.devices, "no_devices");
+					const countryNames = new Intl.DisplayNames([window.siteLocale()], { type: "region" });
+					renderBreakdown("countries", stats.countries, "no_countries", (code) =>
+						code === "Nieznane" ? localizeValue(code) : countryNames.of(code) || code);
+					renderActivity(stats.recent);
+					status.textContent = text("updating_at").replace("{time}", new Intl.DateTimeFormat(window.siteLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date()));
+				} catch (error) {
+					console.error("Nie udało się odświeżyć statystyk.", error);
+					status.textContent = text("update_error");
+				}
+			}
+
+			const statusLabels = { new: "status_new", "in-progress": "status_progress", completed: "status_completed", cancelled: "status_cancelled" };
+			const paymentDate = document.getElementById("payment-date");
+			let customerOrders = [];
+			paymentDate.value = new Date().toISOString().slice(0, 10);
+
+			function renderAdminOrders() {
+				const container = document.getElementById("admin-orders");
+				const search = document.getElementById("order-search").value.trim().toLocaleLowerCase();
+				const dateFrom = document.getElementById("orders-date-from").value;
+				const dateTo = document.getElementById("orders-date-to").value;
+				const sort = document.getElementById("orders-sort").value;
+				const orders = customerOrders.filter((order) => {
+					const date = order.createdAt.slice(0, 10);
+					const owner = order.owner || {};
+					const matchesText = !search || `${order.message} ${owner.name || ""} ${owner.email || ""}`.toLocaleLowerCase().includes(search);
+					return matchesText && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo);
+				}).sort((left, right) => {
+					if (sort === "quantity-desc") return (right.quantity || 1) - (left.quantity || 1) || right.createdAt.localeCompare(left.createdAt);
+					if (sort === "quantity-asc") return (left.quantity || 1) - (right.quantity || 1) || right.createdAt.localeCompare(left.createdAt);
+					return sort === "date-asc" ? left.createdAt.localeCompare(right.createdAt) : right.createdAt.localeCompare(left.createdAt);
+				});
+				document.getElementById("admin-orders-count").textContent = text(orders.length === 1 ? "order_count_one" : "order_count").replace("{count}", String(orders.length));
+				if (!orders.length) {
+					container.innerHTML = `<p class="empty">${safe(text(customerOrders.length ? "orders_filter_empty" : "empty_customer_orders"))}</p>`;
+					return;
+				}
+				container.innerHTML = orders.map((order) => {
+					const status = statusLabels[order.status] || "status_new";
+					const owner = order.owner || {};
+					const fileLink = order.attachment ? `<a class="admin-order-file" href="/api/orders/${encodeURIComponent(order.id)}/file">↓ ${safe(order.attachment.name)} · ${formatFileSize(order.attachment.size)} MB</a>` : `<span class="panel-note">${safe(text("no_attachment"))}</span>`;
+					const options = Object.entries(statusLabels).map(([value, key]) => `<option value="${value}"${order.status === value ? " selected" : ""}>${safe(text(key))}</option>`).join("");
+					const customerEmail = typeof owner.email === "string" && owner.email
+						? `<span class="admin-customer-email">${safe(text("order_customer_email"))}: <a href="mailto:${encodeURIComponent(owner.email)}">${safe(owner.email)}</a></span>`
+						: "";
+					const paymentOptions = [["pending", "status_pending"], ["paid", "status_paid"], ["cancelled", "status_cancelled"]]
+						.map(([value, key]) => `<option value="${value}"${(order.paymentStatus || "pending") === value ? " selected" : ""}>${safe(text(key))}</option>`).join("");
+					const total = order.totalAmountGrosze || (order.quantity || 1) * 2000;
+					return `<article class="admin-order"><div class="admin-order-top"><span class="admin-customer">${safe(owner.name || text("unknown_customer"))}${customerEmail}</span><time datetime="${safe(order.createdAt)}">${safe(new Intl.DateTimeFormat(window.siteLocale(), { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt)))}</time></div><p class="admin-message">${safe(order.message)}</p><p class="admin-order-quantity">${safe(text("order_quantity"))}: ${formatNumber(order.quantity || 1)}</p><p class="admin-order-total">${safe(text("order_total"))}: ${safe(new Intl.NumberFormat(window.siteLocale(), { style: "currency", currency: "PLN" }).format(total / 100))}</p><div class="admin-order-bottom">${fileLink}<div class="status-editor"><select aria-label="${safe(text("order_status"))}" data-order-status="${safe(order.id)}">${options}</select><button type="button" data-save-status="${safe(order.id)}">${safe(text("save"))}</button></div><div class="status-editor"><select aria-label="${safe(text("payment_status"))}" data-payment-status="${safe(order.id)}">${paymentOptions}</select><button type="button" data-save-payment="${safe(order.id)}">${safe(text("save"))}</button></div></div></article>`;
+				}).join("");
+			}
+
+			async function loadAdminPanel() {
+				const [usersResponse, ordersResponse] = await Promise.all([fetch("/api/users", { cache: "no-store" }), fetch("/api/orders", { cache: "no-store" })]);
+				if (!usersResponse.ok || !ordersResponse.ok) throw new Error(text("account_error"));
+				const [{ users }, { orders }] = await Promise.all([usersResponse.json(), ordersResponse.json()]);
+				const userSelect = document.getElementById("payment-user");
+				const selectedUser = userSelect.value;
+				userSelect.innerHTML = `<option value="">${safe(text("choose_account"))}</option>${users.map((user) => `<option value="${safe(user.id)}">${safe(user.name)} · ${safe(user.email)}</option>`).join("")}`;
+				if (users.some((user) => user.id === selectedUser)) userSelect.value = selectedUser;
+				customerOrders = orders;
+				renderAdminOrders();
+			}
+
+			async function loadAdminComments() {
+				const container = document.getElementById("admin-comments");
+				try {
+					const response = await fetch("/api/comments", { cache: "no-store" });
+					const result = await response.json();
+					if (!response.ok || !Array.isArray(result.comments)) throw new Error(text("comments_load_error"));
+					if (!result.comments.length) {
+						container.innerHTML = `<p class="empty">${safe(text("comments_empty"))}</p>`;
+						return;
+					}
+					container.innerHTML = result.comments.map((comment) => {
+						const email = typeof comment.email === "string" && comment.email
+							? `<span class="admin-comment-email">${safe(text("comment_author_email"))}: <a href="mailto:${encodeURIComponent(comment.email)}">${safe(comment.email)}</a></span>`
+							: `<span class="admin-comment-email">${safe(text("comment_email_unavailable"))}</span>`;
+						const createdAt = new Date(comment.createdAt);
+						const date = Number.isNaN(createdAt.getTime())
+							? ""
+							: new Intl.DateTimeFormat(window.siteLocale(), { dateStyle: "medium", timeStyle: "short" }).format(createdAt);
+						return `<article class="admin-comment"><div class="admin-comment-head"><span>${safe(comment.name)}${email}</span><time datetime="${safe(comment.createdAt)}">${safe(date)}</time></div><p class="admin-comment-message">${safe(comment.message)}</p></article>`;
+					}).join("");
+				} catch (error) {
+					console.error("Nie udało się załadować komentarzy społeczności.", error);
+					container.innerHTML = `<p class="empty">${safe(text("comments_load_error"))}</p>`;
+				}
+			}
+			for (const id of ["order-search", "orders-date-from", "orders-date-to", "orders-sort"]) {
+				document.getElementById(id).addEventListener("input", renderAdminOrders);
+				document.getElementById(id).addEventListener("change", renderAdminOrders);
+			}
+
+			document.getElementById("admin-orders").addEventListener("click", async (event) => {
+				const button = event.target.closest("[data-save-status], [data-save-payment]");
+				if (!button) return;
+				const paymentUpdate = Boolean(button.dataset.savePayment);
+				const orderId = paymentUpdate ? button.dataset.savePayment : button.dataset.saveStatus;
+				const select = document.querySelector(paymentUpdate
+					? `[data-payment-status="${CSS.escape(orderId)}"]`
+					: `[data-order-status="${CSS.escape(orderId)}"]`);
+				button.disabled = true;
+				try {
+					const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/${paymentUpdate ? "payment-status" : "status"}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(paymentUpdate ? { paymentStatus: select.value } : { status: select.value }) });
+					const result = await response.json();
+					if (!response.ok) throw new Error(text(paymentUpdate ? "save_payment_status_error" : result.code === "weekly_capacity" ? "orders_capacity_status_error" : "save_status_error"));
+					await loadAdminPanel();
+				} catch (error) {
+					console.error("Nie udało się zapisać statusu zamówienia.", error);
+					button.textContent = text("generic_error");
+					button.title = error.message;
+				} finally {
+					button.disabled = false;
+				}
+			});
+
+			document.getElementById("payment-form").addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const feedback = document.getElementById("payment-feedback");
+				const submit = event.currentTarget.querySelector("button[type=submit]");
+				feedback.className = "admin-feedback";
+				feedback.textContent = "";
+				submit.disabled = true;
+				try {
+					const response = await fetch("/api/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: document.getElementById("payment-user").value, amount: document.getElementById("payment-amount").value, description: document.getElementById("payment-description").value, date: paymentDate.value, status: document.getElementById("payment-status").value }) });
+					const result = await response.json();
+					if (!response.ok) throw new Error(text("save_payment_error"));
+					feedback.textContent = text("payment_added");
+					document.getElementById("payment-description").value = "";
+					document.getElementById("payment-amount").value = "";
+				} catch (error) {
+					console.error("Nie udało się zapisać opłaty.", error);
+					feedback.classList.add("error");
+					feedback.textContent = text("save_payment_error");
+				} finally {
+					submit.disabled = false;
+				}
+			});
+
+			document.getElementById("support-settings-form").addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const feedback = document.getElementById("support-settings-feedback");
+				const submit = document.getElementById("support-settings-submit");
+				feedback.className = "admin-feedback";
+				feedback.textContent = "";
+				submit.disabled = true;
+				try {
+					const response = await fetch("/api/support/settings", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							holder: document.getElementById("support-holder-input").value,
+							iban: document.getElementById("support-iban-input").value,
+						}),
+					});
+					if (!response.ok) throw new Error(text(response.status === 400 ? "support_settings_invalid" : "support_settings_save_error"));
+					const settings = await response.json();
+					document.getElementById("support-holder-input").value = settings.holder;
+					document.getElementById("support-iban-input").value = settings.iban;
+					feedback.textContent = text("support_settings_configured");
+				} catch (error) {
+					if (error instanceof TypeError) console.error("Nie udało się zapisać danych do przelewu wsparcia.", error);
+					feedback.classList.add("error");
+					feedback.textContent = error instanceof TypeError ? text("support_settings_save_error") : error.message;
+				} finally {
+					submit.disabled = false;
+				}
+			});
+			document.getElementById("ordering-visibility-form").addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const feedback = document.getElementById("ordering-visibility-feedback");
+				const submit = document.getElementById("ordering-visibility-submit");
+				feedback.className = "admin-feedback";
+				feedback.textContent = "";
+				submit.disabled = true;
+				try {
+					const response = await fetch("/api/orders/settings", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ enabled: document.getElementById("ordering-enabled-input").checked }),
+					});
+					if (!response.ok) throw new Error(text("ordering_visibility_save_error"));
+					const settings = await response.json();
+					feedback.textContent = text(settings.enabled ? "ordering_visibility_on" : "ordering_visibility_off");
+				} catch (error) {
+					if (error instanceof TypeError) console.error("Nie udało się zmienić widoczności zamówień.", error);
+					feedback.classList.add("error");
+					feedback.textContent = text("ordering_visibility_save_error");
+				} finally {
+					submit.disabled = false;
+				}
+			});
+			document.getElementById("support-visibility-form").addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const feedback = document.getElementById("support-visibility-feedback");
+				const submit = document.getElementById("support-visibility-submit");
+				feedback.className = "admin-feedback";
+				feedback.textContent = "";
+				submit.disabled = true;
+				try {
+					const response = await fetch("/api/support/visibility", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ enabled: document.getElementById("support-enabled-input").checked }),
+					});
+					if (!response.ok) {
+						const error = await response.json();
+						throw new Error(text(error.error === "Najpierw zapisz prawidłowe dane rachunku." ? "support_visibility_requires_settings" : "support_visibility_save_error"));
+					}
+					const result = await response.json();
+					feedback.textContent = text(result.enabled ? "support_visibility_on" : "support_visibility_off");
+				} catch (error) {
+					if (error instanceof TypeError) console.error("Nie udało się zmienić widoczności przycisku wsparcia.", error);
+					feedback.classList.add("error");
+					feedback.textContent = error instanceof TypeError ? text("support_visibility_save_error") : error.message;
+				} finally {
+					submit.disabled = false;
+				}
+			});
+			loadSupportSettings().catch((error) => {
+				console.error("Nie udało się wczytać danych do przelewu wsparcia.", error);
+				const feedback = document.getElementById("support-settings-feedback");
+				feedback.classList.add("error");
+				feedback.textContent = text("support_settings_load_error");
+			});
+			loadOrderingSettings().catch((error) => {
+				console.error("Nie udało się wczytać ustawień zamówień.", error);
+				const feedback = document.getElementById("ordering-visibility-feedback");
+				feedback.classList.add("error");
+				feedback.textContent = text("ordering_settings_load_error");
+			});
+
+			document.getElementById("refresh").addEventListener("click", () => { refreshStats(); loadAdminPanel(); loadAdminComments(); });
+			document.addEventListener("languagechange", () => {
+				refreshStats();
+				loadOrderingSettings().catch((error) => {
+					console.error("Nie udało się wczytać ustawień zamówień.", error);
+					document.getElementById("ordering-visibility-feedback").textContent = text("ordering_settings_load_error");
+				});
+				loadSupportSettings().catch((error) => {
+					console.error("Nie udało się wczytać danych do przelewu wsparcia.", error);
+					document.getElementById("support-settings-feedback").textContent = text("support_settings_load_error");
+				});
+				loadAdminPanel().catch((error) => {
+					console.error("Nie udało się załadować zamówień klientów.", error);
+					document.getElementById("admin-orders").innerHTML = `<p class="empty">${safe(text("account_error"))}</p>`;
+				});
+				loadAdminComments().catch((error) => {
+					console.error("Nie udało się załadować komentarzy społeczności.", error);
+					document.getElementById("admin-comments").innerHTML = `<p class="empty">${safe(text("comments_load_error"))}</p>`;
+				});
+			});
+			refreshStats();
+			loadAdminPanel();
+			loadAdminComments();
+			setInterval(() => { refreshStats(); loadAdminPanel(); loadAdminComments(); }, 15000);
+		</script>
+	</body>
+</html>

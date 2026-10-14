@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="pl">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>GLUSHAK DRIVE</title>
+		<script>
+			try {
+				document.documentElement.dataset.theme = localStorage.getItem("glushak-theme") === "light" ? "light" : "dark";
+			} catch (error) {
+				console.error("Nie udało się odczytać zapisanego motywu.", error);
+				document.documentElement.dataset.theme = "dark";
+			}
+		</script>
+		<style>
+			:root {
+				color-scheme: dark;
+				font-family: "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+				background: #090a0e;
+				color: #f4f3f1;
+				font-synthesis: none;
+				text-rendering: optimizeLegibility;
+			}
+			* { box-sizing: border-box; }
+			body {
+				min-width: 320px;
+				min-height: 100vh;
+				margin: 0;
+				position: relative;
+				isolation: isolate;
+				background: #000;
+			}
+			body::before { position: fixed; z-index: -1; inset: -24%; pointer-events: none; background: radial-gradient(ellipse at 18% 28%, #ff173b8c, transparent 38%), radial-gradient(ellipse at 77% 31%, #7428ff82, transparent 42%), radial-gradient(ellipse at 54% 78%, #00d9b878, transparent 40%), radial-gradient(ellipse at 91% 82%, #00aaff55, transparent 38%); filter: blur(64px) saturate(150%); opacity: .8; content: ""; animation: rgb-flow 32s ease-in-out infinite alternate; }
+			@keyframes rgb-flow { 0% { transform: translate3d(-4%, -2%, 0) scale(1) rotate(-5deg); filter: blur(64px) saturate(150%) hue-rotate(0deg); } 50% { transform: translate3d(3%, 3%, 0) scale(1.08) rotate(5deg); filter: blur(72px) saturate(165%) hue-rotate(90deg); } 100% { transform: translate3d(-1%, 4%, 0) scale(1.03) rotate(-3deg); filter: blur(66px) saturate(155%) hue-rotate(210deg); } }
+			.page-shell { width: min(100% - 48px, 1060px); margin: 0 auto; padding: 40px 0 64px; }
+			.banner {
+				display: block;
+				width: 100%;
+				aspect-ratio: 1060 / 175;
+				object-fit: cover;
+				border-bottom: 3px solid #e5233e;
+				animation: reveal 650ms ease-out both;
+			}
+			.identity {
+				display: flex;
+				align-items: center;
+				gap: 24px;
+				padding: 24px 0 30px;
+				animation: reveal 700ms 100ms ease-out both;
+			}
+			.avatar { width: 116px; height: 116px; flex: 0 0 116px; border: 3px solid #e5233e; border-radius: 50%; object-fit: cover; }
+			h1 { margin: 0; color: #fff; font-size: clamp(30px, 6vw, 54px); line-height: 1; text-transform: uppercase; }
+			.handle { margin: 10px 0 0; color: #aeb0b7; font-family: Arial, sans-serif; font-size: 14px; }
+			.social-area { border-top: 1px solid #ffffff24; padding-top: 22px; animation: reveal 700ms 180ms ease-out both; }
+			h2 { margin: 0 0 14px; color: #92949c; font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+			.social-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+			.social-link {
+				min-height: 60px;
+				padding: 0 20px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 11px;
+				border: 1px solid #ffffff20;
+				border-radius: 6px;
+				background: #15161c;
+				color: #f4f3f1;
+				font-size: 17px;
+				font-weight: 700;
+				text-decoration: none;
+				transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+			}
+			.social-link svg { width: 24px; height: 24px; flex: 0 0 24px; }
+			.social-link:hover { transform: translateY(-2px); border-color: #e5233e; background: #202127; }
+			.social-link[data-platform="TikTok"] { border-color: #25f4ee; background: #111a20; color: #fff; }
+			.social-link[data-platform="TikTok"]:hover { border-color: #fe2c55; background: #1b2028; }
+			.social-link[data-platform="Instagram"] { border-color: #d946a8; background: linear-gradient(115deg, #833ab4, #e1306c 58%, #f77737); color: #fff; }
+			.social-link[data-platform="Instagram"]:hover { border-color: #ffb347; background: linear-gradient(115deg, #7130a0, #d52662 58%, #e9672d); }
+			.social-link.youtube { border-color: #e5233e; background: #e5233e; color: #fff; }
+			.social-link.youtube:hover { background: #c91d34; }
+			.social-link:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+			.support-area { display: flex; justify-content: center; margin-top: 24px; }
+			.support-button { min-height: 48px; padding: 0 22px; border: 1px solid #ffc857; border-radius: 24px; background: linear-gradient(110deg, #a85c10, #dc9823); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px #e9a12b30; transition: transform 160ms ease, filter 160ms ease; }
+			.support-button:hover { transform: translateY(-2px); filter: brightness(1.12); }
+			.support-button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+			.support-button span { margin-right: 8px; }
+			.support-dialog { width: min(520px, calc(100% - 32px)); }
+			.support-details { display: grid; gap: 10px; margin-top: 18px; padding: 15px; border: 1px solid #ffffff20; border-radius: 6px; background: #0e0f13; font: 13px/1.5 Arial, sans-serif; }
+			.support-details[hidden] { display: none !important; }
+			.support-details p { margin: 0; }
+			.support-details strong, .support-details code { display: block; margin-top: 4px; color: #fff; font: 700 14px/1.45 Arial, sans-serif; overflow-wrap: anywhere; }
+			.support-note { color: #aeb0b7; font: 12px/1.55 Arial, sans-serif; }
+			#support-feedback.success { color: #75ddb0; }
+			.comments-area { margin-top: 34px; border-top: 1px solid #ffffff24; padding-top: 22px; animation: reveal 700ms 240ms ease-out both; }
+			.comments-heading { display: flex; align-items: baseline; gap: 10px; }
+			.comments-heading h2 { margin-bottom: 8px; }
+			.comment-count { color: #777983; font-family: Arial, sans-serif; font-size: 11px; }
+			.comments-intro { margin: 0 0 18px; color: #aeb0b7; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5; }
+			.comment-form { display: grid; gap: 10px; margin-bottom: 24px; }
+			.comment-form textarea { width: 100%; min-height: 104px; padding: 13px 14px; resize: vertical; border: 1px solid #ffffff25; border-radius: 6px; background: #15161c; color: #f4f3f1; font: 14px/1.5 Arial, sans-serif; }
+			.comment-form textarea:focus { border-color: #e5233e; outline: 2px solid #e5233e55; }
+			.comment-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+			.comment-form button, .comment-login { min-height: 42px; padding: 0 18px; border: 0; border-radius: 4px; background: #e5233e; color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+			.comment-form button:hover, .comment-login:hover { background: #c91d34; }
+			.comment-form button:disabled { opacity: .65; cursor: wait; }
+			.comment-status { margin: 0; color: #aeb0b7; font-family: Arial, sans-serif; font-size: 12px; }
+			.comment-status[role="alert"] { color: #ff8795; }
+			.comment-login { margin-bottom: 24px; }
+			.comment-list { display: grid; gap: 12px; }
+			.comment-item { padding: 15px 16px; border: 1px solid #ffffff18; border-radius: 6px; background: #111217; }
+			.comment-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+			.comment-meta strong { color: #fff; font-family: Arial, sans-serif; font-size: 13px; }
+			.comment-meta time { color: #777983; font-family: Arial, sans-serif; font-size: 11px; }
+			.comment-message { margin: 0; overflow-wrap: anywhere; color: #d0d0d3; font: 13px/1.6 Arial, sans-serif; white-space: pre-wrap; }
+			.comment-empty { margin: 0; padding: 20px; border: 1px dashed #ffffff24; border-radius: 6px; color: #92949c; font: 13px Arial, sans-serif; text-align: center; }
+			.privacy-notice { margin-top: 28px; padding: 16px 0 0; border-top: 1px solid #ffffff20; color: #92949c; font: 12px/1.65 Arial, sans-serif; }
+			.privacy-notice strong { display: block; margin-bottom: 5px; color: #c7c8ce; font-size: 12px; }
+			.privacy-notice p { margin: 0; }
+			@keyframes reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+			@media (max-width: 620px) {
+				.page-shell { width: min(100% - 32px, 1060px); padding-top: 20px; }
+				.profile-row { margin-top: 58px; justify-content: center; }
+				.identity { align-items: flex-start; gap: 16px; padding: 20px 0 24px; }
+				.avatar { width: 76px; height: 76px; flex-basis: 76px; }
+				h1 { font-size: clamp(26px, 8vw, 40px); line-height: 1.05; }
+				.handle { font-size: 12px; }
+				.social-links { grid-template-columns: 1fr; gap: 9px; }
+				.social-link { min-height: 54px; justify-content: flex-start; }
+				.comments-area { margin-top: 26px; }
+				.comment-meta { align-items: flex-start; flex-direction: column; gap: 4px; }
+				.comment-form-footer { align-items: flex-start; flex-direction: column; }
+			}
+			@media (prefers-reduced-motion: reduce) {
+				*, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+			}
+			.analytics-consent {
+				position: fixed;
+				z-index: 5;
+				right: 20px;
+				bottom: 20px;
+				width: min(440px, calc(100% - 32px));
+				padding: 18px;
+				border: 1px solid #ffffff25;
+				border-left: 3px solid #e5233e;
+				background: #15161c;
+				box-shadow: 0 12px 40px #0009;
+				font-family: Arial, sans-serif;
+			}
+			.analytics-consent[hidden] { display: none; }
+			.analytics-consent p { margin: 0 0 14px; color: #d0d0d3; font-size: 13px; line-height: 1.5; }
+			.analytics-consent-actions { display: flex; gap: 8px; }
+			.analytics-consent button { min-height: 40px; flex: 1; border: 1px solid #ffffff32; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+			.analytics-consent button:first-child { border-color: #e5233e; background: #e5233e; }
+			.analytics-consent button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+			[hidden] { display: none !important; }
+			.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+			.profile-row { position: relative; z-index: 4; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+			.rules-button { min-height: 42px; padding: 0 14px; border: 1px solid #ffffff25; border-radius: 22px; background: #15161c; color: #f4f3f1; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+			.rules-button, .order-help-button { white-space: nowrap; }
+			.order-help-button { min-height: 42px; padding: 0 14px; border: 1px solid #ffffff25; border-radius: 22px; background: #15161c; color: #f4f3f1; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+			.order-help-button:hover { border-color: #e5233e; background: #202127; }
+			.order-help-button:focus-visible { outline: 2px solid #e5233e; outline-offset: 3px; }
+			.rules-button:hover { border-color: #e5233e; background: #202127; }
+			.rules-button:focus-visible { outline: 2px solid #e5233e; outline-offset: 3px; }
+			.rules-dialog { width: min(680px, calc(100% - 32px)); max-width: none; max-height: calc(100% - 32px); padding: 26px; overflow: auto; border: 1px solid #ffffff24; border-top: 3px solid #e5233e; border-radius: 8px; background: #15161c; color: #f4f3f1; box-shadow: 0 24px 80px #000c; }
+			.work-dialog { width: min(980px, calc(100% - 32px)); }
+			.work-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-top: 20px; }
+			.work-card { min-width: 0; overflow: hidden; border: 1px solid #ffffff24; border-radius: 7px; background: #0e0f13; }
+			.work-card h3 { margin: 0; padding: 13px 14px; color: #f4f3f1; font: 700 15px/1.4 Arial, sans-serif; overflow-wrap: anywhere; }
+			.work-video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; }
+			.work-card-footer { display: flex; justify-content: flex-end; padding: 9px 12px; }
+			.work-remove { border: 0; background: transparent; color: #ff8795; font: 700 12px Arial, sans-serif; cursor: pointer; }
+			.work-empty, .work-status { color: #aeb0b7; font: 13px/1.5 Arial, sans-serif; }
+			.work-status.error { color: #ff8795; }
+			.work-add-form { display: grid; grid-template-columns: 1fr 1.4fr auto; align-items: end; gap: 12px; margin-top: 18px; padding: 16px; border: 1px solid #ffffff24; border-radius: 7px; background: #101116; }
+			.work-add-form .account-submit { min-width: 150px; }
+			.work-add-form .work-form-status { grid-column: 1 / -1; margin: 0; }
+			.rules-dialog::backdrop { background: #050609c9; backdrop-filter: blur(4px); }
+			.rules-dialog h3 { margin: 22px 0 8px; color: #fff; font: 700 14px Arial, sans-serif; }
+			.rules-dialog p, .rules-dialog li { color: #c8c9ce; font: 13px/1.65 Arial, sans-serif; }
+			.rules-dialog p { margin: 12px 0; }
+			.rules-dialog ul { display: grid; gap: 8px; margin: 8px 0 0; padding-left: 21px; }
+			.rules-dialog a { color: #ff6477; font: 700 13px Arial, sans-serif; text-decoration: none; }
+			.rules-dialog a:hover { text-decoration: underline; }
+			.rules-dialog .dialog-close { cursor: pointer; }
+			.messages-dialog { width: min(900px, calc(100% - 28px)); height: min(650px, calc(100% - 28px)); max-height: none; padding: 0; overflow: hidden; border-top: 0; }
+			.messages-dialog .dialog-top { min-height: 76px; margin: 0; padding: 15px 20px; border-bottom: 1px solid #ffffff16; }
+			.messages-dialog .dialog-eyebrow { margin: 0 0 5px; }
+			.messages-dialog .dialog-title { font-size: 19px; }
+			.messages-layout { display: grid; grid-template-columns: minmax(230px, 0.8fr) minmax(0, 1.5fr); height: calc(100% - 76px); }
+			.conversation-sidebar { min-width: 0; display: flex; flex-direction: column; border-right: 1px solid #ffffff16; background: #101116; }
+			.conversation-search { display: grid; gap: 9px; padding: 15px; border-bottom: 1px solid #ffffff16; }
+			.conversation-search p { margin: 0; color: #8e909a; font: 12px/1.45 Arial, sans-serif; }
+			.conversation-search-row { display: flex; gap: 7px; }
+			.conversation-search input { width: 100%; min-width: 0; height: 38px; padding: 0 10px; border: 1px solid #ffffff20; border-radius: 20px; background: #1b1c22; color: #f4f3f1; font: 12px Arial, sans-serif; }
+			.conversation-search button { flex: 0 0 38px; height: 38px; border: 0; border-radius: 50%; background: #e5233e; color: #fff; font: 700 18px Arial, sans-serif; cursor: pointer; }
+			.conversation-search input:focus, .conversation-search button:focus-visible, .message-composer textarea:focus, .message-composer button:focus-visible { outline: 2px solid #ff8795; outline-offset: 2px; }
+			.conversation-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+			.conversation-list > p { margin: 10px 8px; color: #aeb0b7; font: 12px/1.5 Arial, sans-serif; }
+			.conversation-button { width: 100%; display: flex; align-items: center; gap: 11px; padding: 10px; border: 0; border-radius: 7px; background: transparent; color: #f4f3f1; text-align: left; cursor: pointer; }
+			.conversation-button:hover, .conversation-button[aria-current="true"] { background: #ffffff12; }
+			.conversation-avatar { width: 39px; height: 39px; flex: 0 0 39px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, #e5233e, #7525a8); color: #fff; font: 700 16px Arial, sans-serif; }
+			.conversation-copy { min-width: 0; display: grid; gap: 4px; }
+			.conversation-name { overflow: hidden; font: 700 12px Arial, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+			.conversation-preview { overflow: hidden; color: #92949d; font: 11px Arial, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+			.chat-thread { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #15161c; }
+			.chat-header { min-height: 59px; display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid #ffffff16; }
+			.chat-header-name { color: #f4f3f1; font: 700 13px Arial, sans-serif; }
+			.chat-header-status { display: block; margin-top: 4px; color: #75ddb0; font: 11px Arial, sans-serif; }
+			.chat-thread-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding: 18px; }
+			.chat-thread-body > p { margin: auto; color: #9698a1; font: 12px/1.55 Arial, sans-serif; text-align: center; }
+			.chat-message { max-width: min(78%, 460px); display: grid; gap: 5px; align-self: flex-start; }
+			.chat-message.sent { align-self: flex-end; }
+			.chat-bubble { padding: 10px 13px; border-radius: 17px 17px 17px 5px; background: #292a32; color: #f4f3f1; font: 13px/1.5 Arial, sans-serif; overflow-wrap: anywhere; white-space: pre-wrap; }
+			.chat-message.sent .chat-bubble { border-radius: 17px 17px 5px 17px; background: #e5233e; color: #fff; }
+			.chat-message time { padding: 0 5px; color: #898b95; font: 10px Arial, sans-serif; }
+			.chat-message.sent time { text-align: right; }
+			.chat-image { max-width: min(100%, 360px); max-height: 320px; border-radius: 12px; object-fit: contain; background: #090a0d; }
+			.message-image-preview { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid #ffffff16; }
+			.message-image-preview[hidden] { display: none; }
+			.message-image-preview img { max-width: 84px; max-height: 64px; border-radius: 7px; object-fit: cover; }
+			.message-image-preview button { width: 30px; height: 30px; border: 1px solid #ffffff25; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+			.message-composer { display: flex; align-items: flex-end; gap: 9px; padding: 13px 16px; border-top: 1px solid #ffffff16; }
+			.message-composer textarea { flex: 1; min-height: 42px; max-height: 120px; padding: 11px 14px; resize: vertical; border: 1px solid #ffffff20; border-radius: 20px; background: #22232a; color: #f4f3f1; font: 13px/1.4 Arial, sans-serif; }
+			.message-composer button { width: 42px; height: 42px; flex: 0 0 42px; border: 0; border-radius: 50%; background: #e5233e; color: #fff; font: 700 18px Arial, sans-serif; cursor: pointer; }
+			.message-composer #message-image-select { border: 1px solid #ffffff25; background: transparent; font-size: 22px; }
+			.message-composer button:disabled { opacity: .5; cursor: wait; }
+			#message-feedback { margin: 0; padding: 0 16px 8px; font-size: 11px; }
+			#message-feedback.success { color: #75ddb0; }
+			html[data-theme="light"] .messages-dialog { background: #fff; }
+			html[data-theme="light"] .conversation-sidebar { border-color: #00000018; background: #f4f5f8; }
+			html[data-theme="light"] .conversation-search, html[data-theme="light"] .chat-header, html[data-theme="light"] .message-composer { border-color: #00000018; }
+			html[data-theme="light"] .conversation-search input, html[data-theme="light"] .message-composer textarea { border-color: #00000020; background: #fff; color: #202127; }
+			html[data-theme="light"] .conversation-button { color: #202127; }
+			html[data-theme="light"] .conversation-button:hover, html[data-theme="light"] .conversation-button[aria-current="true"] { background: #0000000b; }
+			html[data-theme="light"] .chat-thread { background: #fff; }
+			html[data-theme="light"] .chat-header-name { color: #202127; }
+			html[data-theme="light"] .chat-bubble { background: #eceef3; color: #202127; }
+			html[data-theme="light"] .message-image-preview { border-color: #00000018; }
+			@media (max-width: 640px) {
+				.messages-dialog { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; }
+				.messages-dialog .dialog-top { min-height: 68px; padding: 12px 14px; }
+				.messages-layout { grid-template-columns: 112px minmax(0, 1fr); height: calc(100% - 68px); }
+				.conversation-search { padding: 10px 7px; }
+				.conversation-search p { font-size: 10px; }
+				.conversation-search-row { flex-direction: column; }
+				.conversation-search input { height: 34px; padding: 0 8px; font-size: 10px; }
+				.conversation-search button { width: 100%; height: 32px; min-height: 32px; flex-basis: 32px; border-radius: 16px; font-size: 16px; }
+				.conversation-list { padding: 4px; }
+				.conversation-button { flex-direction: column; align-items: center; gap: 5px; padding: 8px 4px; text-align: center; }
+				.conversation-avatar { width: 34px; height: 34px; flex-basis: 34px; }
+				.conversation-copy { width: 100%; }
+				.conversation-name { font-size: 10px; }
+				.conversation-preview { font-size: 9px; }
+				.chat-header { min-height: 52px; padding: 8px; }
+				.chat-header .conversation-avatar { width: 32px; height: 32px; flex-basis: 32px; }
+				.chat-thread-body { gap: 8px; padding: 11px 8px; }
+				.chat-message { max-width: 92%; }
+				.chat-bubble { padding: 8px 10px; font-size: 12px; }
+				.message-composer { gap: 6px; padding: 9px 7px; }
+				.message-composer textarea { min-height: 40px; padding: 10px; font-size: 12px; }
+				.message-composer button { width: 36px; height: 36px; flex-basis: 36px; }
+			}
+			html[data-theme="light"] .rules-button { border-color: #00000020; background: #fff; color: #202127; }
+			html[data-theme="light"] .rules-button:hover { background: #f6f6f8; }
+			html[data-theme="light"] .order-help-button { border-color: #00000020; background: #fff; color: #202127; }
+			html[data-theme="light"] .order-help-button:hover { background: #f6f6f8; }
+			html[data-theme="light"] .rules-dialog { border-color: #00000020; background: #fff; color: #202127; }
+			html[data-theme="light"] .work-card { border-color: #00000020; background: #f3f3f5; }
+			html[data-theme="light"] .work-card h3 { color: #202127; }
+			html[data-theme="light"] .work-add-form { border-color: #00000020; background: #f3f3f5; }
+			html[data-theme="light"] .work-empty, html[data-theme="light"] .work-status { color: #555862; }
+			html[data-theme="light"] .rules-dialog h3 { color: #202127; }
+			html[data-theme="light"] .rules-dialog p, html[data-theme="light"] .rules-dialog li { color: #454750; }
+			html[data-theme="light"] .support-details { border-color: #00000018; background: #f3f3f5; }
+			html[data-theme="light"] .support-details strong, html[data-theme="light"] .support-details code { color: #202127; }
+			html[data-theme="light"] .support-note { color: #555862; }
+			html[data-theme="light"] .message-item { border-color: #00000018; background: #f3f3f5; }
+			html[data-theme="light"] .message-item p { color: #34363e; }
+			html[data-theme="light"] .message-item-head { color: #b51e35; }
+			html[data-theme="light"] .message-item time { color: #747680; }
+			.profile-trigger { min-height: 48px; padding: 3px 14px 3px 4px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid #ffffff25; border-radius: 24px; background: #15161c; color: #f4f3f1; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+			.profile-trigger:hover, .profile-trigger[aria-expanded="true"] { border-color: #e5233e; background: #202127; }
+			.profile-trigger img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+			.profile-chevron { color: #aeb0b7; font-size: 10px; }
+			.profile-menu { position: absolute; top: calc(100% + 10px); right: 0; width: min(290px, calc(100vw - 32px)); padding: 8px; border: 1px solid #ffffff24; border-radius: 8px; background: #15161c; box-shadow: 0 18px 48px #000b; }
+			.profile-menu::before { position: absolute; top: -6px; right: 18px; width: 10px; height: 10px; transform: rotate(45deg); border-top: 1px solid #ffffff24; border-left: 1px solid #ffffff24; background: #15161c; content: ""; }
+			.profile-menu-summary { padding: 11px 12px 14px; border-bottom: 1px solid #ffffff18; }
+			.profile-menu-summary strong { display: block; overflow-wrap: anywhere; color: #fff; font-size: 14px; }
+			.profile-menu-summary span { display: block; margin-top: 5px; color: #9698a1; font-family: Arial, sans-serif; font-size: 11px; }
+			.profile-action { width: 100%; min-height: 42px; padding: 0 12px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 4px; background: transparent; color: #e3e3e6; font: inherit; font-size: 13px; text-align: left; text-decoration: none; cursor: pointer; }
+			.profile-action:hover { background: #ffffff0d; color: #fff; }
+			.profile-action.studio-action { margin-top: 4px; color: #ff6477; }
+			.profile-action:focus-visible { outline: 2px solid #e5233e; outline-offset: -2px; }
+			.notification-count { min-width: 20px; margin-left: auto; padding: 3px 6px; border-radius: 10px; background: #e5233e; color: #fff; font-size: 10px; font-weight: 700; text-align: center; }
+			.notification-list { display: grid; gap: 8px; }
+			.notification-item { display: block; padding: 12px; border: 1px solid #ffffff1c; border-radius: 5px; background: #101115; color: inherit; text-decoration: none; }
+			.notification-item.unread { border-left: 3px solid #e5233e; }
+			.notification-item strong { display: block; color: #f4f3f1; font-size: 12px; line-height: 1.5; }
+			.notification-item time { display: block; margin-top: 7px; color: #93959e; font-size: 10px; }
+			.notification-empty, .notification-error { color: #a6a8b0; font-size: 12px; line-height: 1.5; }
+			.notification-error { color: #ff8795; }
+			.notification-toolbar { display: flex; justify-content: flex-end; margin: 0 0 12px; }
+			.notification-read-button { min-height: 34px; padding: 0 10px; border: 1px solid #ffffff24; border-radius: 4px; background: #202127; color: #f4f3f1; font-size: 11px; cursor: pointer; }
+			.notification-read-button:disabled { opacity: .55; cursor: wait; }
+			.account-dialog { width: min(440px, calc(100% - 32px)); max-width: none; max-height: calc(100% - 32px); padding: 26px; overflow: auto; border: 1px solid #ffffff24; border-top: 3px solid #e5233e; border-radius: 8px; background: #15161c; color: #f4f3f1; box-shadow: 0 24px 80px #000c; }
+			.account-dialog::backdrop { background: #050609c9; backdrop-filter: blur(4px); }
+			.dialog-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+			.dialog-eyebrow { margin: 0 0 7px; color: #ff6477; font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
+			.dialog-title { margin: 0; color: #fff; font-size: 25px; }
+			.dialog-help { margin: 10px 0 20px; color: #a6a8b0; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.55; }
+			.dialog-close { width: 34px; height: 34px; flex: 0 0 34px; border: 1px solid #ffffff24; border-radius: 50%; background: #202127; color: #fff; font-size: 19px; cursor: pointer; }
+			.account-form { display: grid; gap: 14px; }
+			.account-field { display: grid; gap: 7px; color: #d7d7da; font-family: Arial, sans-serif; font-size: 12px; font-weight: 700; }
+			.account-field input, .account-field textarea { width: 100%; min-height: 44px; padding: 12px; border: 1px solid #ffffff25; border-radius: 4px; background: #0e0f13; color: #fff; font: inherit; font-size: 14px; }
+			.account-field textarea { min-height: 104px; resize: vertical; }
+			.account-field input:focus, .account-field textarea:focus { border-color: #e5233e; outline: 2px solid #e5233e55; }
+			.account-error { margin: 0; color: #ff8795; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; }
+			.account-submit { min-height: 46px; margin-top: 4px; border: 0; border-radius: 4px; background: #e5233e; color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+			.account-submit:hover { background: #c91d34; }
+			.account-submit:disabled { opacity: .65; cursor: wait; }
+			.account-switch { width: 100%; margin-top: 15px; padding: 8px; border: 0; background: transparent; color: #c1c2c7; font: inherit; font-size: 12px; cursor: pointer; }
+			.account-switch:hover { color: #fff; text-decoration: underline; }
+			.account-dialog :focus-visible { outline-color: #ff6477; }
+		.theme-toggle {
+			position: fixed;
+			z-index: 10;
+			top: 20px;
+			left: 20px;
+			min-height: 42px;
+			padding: 0 14px;
+			border: 1px solid #ffffff30;
+			border-radius: 22px;
+			background: #15161c;
+			color: #f4f3f1;
+			font: inherit;
+			font-size: 13px;
+			font-weight: 700;
+			cursor: pointer;
+			box-shadow: 0 4px 16px #0004;
+		}
+		.theme-toggle:hover { border-color: #e5233e; background: #202127; }
+		.theme-toggle:focus-visible { outline: 3px solid #e5233e; outline-offset: 3px; }
+		.language-select { position: fixed; z-index: 10; top: 20px; left: 150px; width: 132px; min-height: 38px; padding: 0 8px; border: 1px solid #ffffff30; border-radius: 20px; background: #15161c; color: #f4f3f1; font: 700 11px Arial, sans-serif; cursor: pointer; box-shadow: 0 4px 16px #0004; }
+		.language-select:focus-visible { outline: 3px solid #e5233e; outline-offset: 3px; }
+		html[data-theme="light"] .language-select { border-color: #00000030; background: #fff; color: #202127; }
+		html[data-theme="light"] { color-scheme: light; background: #f3f4f6; color: #202127; }
+		html[data-theme="light"] body { background: #f3f4f6; }
+		html[data-theme="light"] h1 { color: #17181d; }
+		html[data-theme="light"] h2 { color: #646771; }
+		html[data-theme="light"] .handle,
+		html[data-theme="light"] .comments-intro { color: #5e6069; }
+		html[data-theme="light"] .social-area,
+		html[data-theme="light"] .comments-area { border-color: #00000020; }
+		html[data-theme="light"] .social-link { border-color: #00000020; background: #fff; color: #202127; }
+		html[data-theme="light"] .social-link:hover { background: #f6f6f8; }
+		html[data-theme="light"] .social-link[data-platform="TikTok"] { border-color: #25bfc1; background: #111a20; color: #fff; }
+		html[data-theme="light"] .social-link[data-platform="TikTok"]:hover { border-color: #fe2c55; background: #1b2028; }
+		html[data-theme="light"] .social-link[data-platform="Instagram"] { border-color: #d946a8; background: linear-gradient(115deg, #833ab4, #e1306c 58%, #f77737); color: #fff; }
+		html[data-theme="light"] .social-link[data-platform="Instagram"]:hover { border-color: #ffb347; background: linear-gradient(115deg, #7130a0, #d52662 58%, #e9672d); }
+		html[data-theme="light"] .social-link.youtube { border-color: #e5233e; background: #e5233e; color: #fff; }
+		html[data-theme="light"] .comment-form textarea,
+		html[data-theme="light"] .account-field input { border-color: #00000028; background: #fff; color: #202127; }
+		html[data-theme="light"] .account-field { color: #3e4048; }
+		html[data-theme="light"] .comment-item { border-color: #00000018; background: #fff; }
+		html[data-theme="light"] .comment-meta strong { color: #202127; }
+		html[data-theme="light"] .comment-message { color: #454750; }
+		html[data-theme="light"] .comment-count,
+		html[data-theme="light"] .comment-meta time { color: #6f727b; }
+		html[data-theme="light"] .comment-empty { border-color: #00000030; color: #646771; }
+		html[data-theme="light"] .comment-status { color: #555862; }
+		html[data-theme="light"] .profile-trigger,
+		html[data-theme="light"] .profile-menu { border-color: #00000020; background: #fff; color: #202127; }
+		html[data-theme="light"] .profile-menu::before { border-color: #00000020; background: #fff; }
+		html[data-theme="light"] .profile-menu-summary { border-color: #00000018; }
+		html[data-theme="light"] .profile-menu-summary strong { color: #202127; }
+		html[data-theme="light"] .profile-menu-summary span,
+		html[data-theme="light"] .profile-chevron { color: #646771; }
+		html[data-theme="light"] .profile-action { color: #34363e; }
+		html[data-theme="light"] .profile-action:hover { background: #00000008; color: #111; }
+		html[data-theme="light"] .account-dialog { border-color: #00000020; background: #fff; color: #202127; }
+		html[data-theme="light"] .dialog-title { color: #202127; }
+		html[data-theme="light"] .dialog-help,
+		html[data-theme="light"] .account-switch { color: #555862; }
+		html[data-theme="light"] .dialog-close { border-color: #00000020; background: #f0f0f2; color: #202127; }
+		html[data-theme="light"] .analytics-consent { border-color: #00000025; background: #fff; }
+		html[data-theme="light"] .analytics-consent p { color: #454750; }
+		html[data-theme="light"] .analytics-consent button { border-color: #00000035; color: #202127; }
+		html[data-theme="light"] .analytics-consent button:first-child { border-color: #e5233e; color: #fff; }
+		@media (max-width: 620px) {
+			.work-add-form { grid-template-columns: 1fr; }
+			.work-add-form .account-submit { min-width: 0; }
+			.theme-toggle { top: 12px; left: 12px; display: grid; width: 38px; height: 38px; min-height: 38px; padding: 0; place-items: center; font-size: 0; }
+			.theme-toggle::after { content: "☾"; font-size: 19px; line-height: 1; }
+			html[data-theme="light"] .theme-toggle::after { content: "☀"; }
+			.language-select { top: 12px; left: 58px; width: 38px; height: 38px; min-height: 38px; padding: 0; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23f4f3f1' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cellipse cx='12' cy='12' rx='4' ry='9'/%3E%3Cpath d='M3 12h18M5.6 6.5h12.8M5.6 17.5h12.8'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 18px; color: transparent; font-size: 0; }
+			.language-select option { color: #202127; font-size: 14px; }
+			html[data-theme="light"] .language-select { background-color: #fff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23202127' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cellipse cx='12' cy='12' rx='4' ry='9'/%3E%3Cpath d='M3 12h18M5.6 6.5h12.8M5.6 17.5h12.8'/%3E%3C/svg%3E"); }
+		}
+		</style>
+	</head>
+	<body>
+		<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Włącz jasny tryb" data-i18n="theme_switch_light">☀ Jasny tryb</button>
+		<label class="visually-hidden" for="language-select" data-i18n="language_label">Język</label>
+		<select class="language-select" id="language-select" aria-label="Język" data-i18n-aria="language_label">
+			<option value="pl">Polski</option>
+			<option value="en">English</option>
+			<option value="uk">Українська</option>
+			<option value="de">Deutsch</option>
+			<option value="es">Español</option>
+			<option value="fr">Français</option>
+			<option value="it">Italiano</option>
+			<option value="pt">Português</option>
+			<option value="ru">Русский</option>
+			<option value="zh">中文</option>
+		</select>
+		<main class="page-shell">
+			<div class="profile-row">
+				<button class="rules-button" id="rules-open" type="button" aria-haspopup="dialog" aria-controls="rules-dialog" data-i18n="rules_button">Zasady strony</button>
+				<button class="order-help-button" id="order-help-open" type="button" aria-haspopup="dialog" aria-controls="order-help-dialog" data-i18n="order_button" hidden>Instrukcja zamówienia</button>
+				<button class="order-help-button" id="works-open" type="button" aria-haspopup="dialog" aria-controls="works-dialog" data-i18n="works_button">Prace</button>
+				<button class="order-help-button" id="info-open" type="button" aria-haspopup="dialog" aria-controls="info-dialog" data-i18n="info_button">Informacja</button>
+				<button class="profile-trigger" id="profile-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-menu">
+					<img src="/channel-avatar.jpg" alt="" />
+					<span id="profile-label" data-i18n="profile">Profil</span>
+					<span class="profile-chevron" aria-hidden="true">▼</span>
+				</button>
+				<div class="profile-menu" id="profile-menu" role="menu" hidden>
+					<div class="profile-menu-summary"><strong id="profile-name" data-i18n="guest">Gość</strong><span id="profile-role" data-i18n="not_logged_in">Nie zalogowano</span></div>
+					<button class="profile-action" id="notifications-open" type="button" role="menuitem" hidden><span data-i18n="notifications_button">Powiadomienia</span><span class="notification-count" id="notification-count" hidden>0</span></button>
+					<a class="profile-action" id="account-link" href="/account" role="menuitem" hidden data-i18n="my_account">Moje konto</a>
+					<a class="profile-action studio-action" id="studio-link" href="/studio" role="menuitem" hidden data-i18n="go_studio">Przejdź do Studio</a>
+					<button class="profile-action" id="messages-open" type="button" role="menuitem" hidden data-i18n="message_friend">Napisz do znajomego</button>
+					<button class="profile-action" id="login-action" type="button" role="menuitem" data-i18n="login">Zaloguj się</button>
+					<button class="profile-action" id="register-action" type="button" role="menuitem" data-i18n="add_account">Dodaj konto</button>
+					<button class="profile-action" id="logout-action" type="button" role="menuitem" hidden data-i18n="logout">Wyloguj się</button>
+				</div>
+			</div>
+			<img class="banner" src="/channel-banner.jpg" alt="Nocny banner kanału GLUSHAK DRIVE z samochodami" data-i18n-alt="banner_alt" />
+			<header class="identity">
+				<img class="avatar" src="/channel-avatar.jpg" alt="Logo GLUSHAK DRIVE" data-i18n-alt="avatar_alt" />
+				<div>
+					<h1>GLUSHAK DRIVE</h1>
+					<p class="handle">@GLUSHAKDRIVE</p>
+				</div>
+			</header>
+			<section class="social-area" aria-labelledby="social-title">
+				<h2 id="social-title" data-i18n="social_heading">MEDIA SPOŁECZNOŚCIOWE</h2>
+				<nav class="social-links" aria-label="Media społecznościowe" data-i18n-aria="social_heading">
+					<a class="social-link" data-platform="TikTok" href="https://www.tiktok.com/@glushakdrive?_r=1&amp;_t=ZN-9AWe9HWUj4w" target="_blank" rel="noopener noreferrer">
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path fill="#25F4EE" transform="translate(-0.45 0.25)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.06 1.75 4.13 1.12 1.1 2.7 1.58 4.23 1.65v4.01c-1.43-.05-2.86-.35-4.17-.96-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.36 3.93-1.32 1.92-3.62 3.17-5.95 3.21-1.43.08-2.86-.31-4.07-1.07-2-1.25-3.37-3.48-3.58-5.83-.02-.5-.03-1.01-.01-1.51.18-1.92 1.12-3.78 2.63-5.02 1.7-1.44 4.1-2.13 6.3-1.74.02 1.48-.04 2.96-.04 4.44-1-.32-2.17-.23-3.03.39-.62.42-1.1 1.07-1.25 1.8-.13.58-.1 1.2.06 1.78.41 1.32 1.75 2.2 3.12 2.1.91-.02 1.79-.53 2.3-1.28.16-.28.3-.58.37-.9.1-1.69.05-3.38.06-5.07.01-3.87-.01-7.73.03-11.6z" />
+					<path fill="#FE2C55" transform="translate(0.45 -0.25)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.06 1.75 4.13 1.12 1.1 2.7 1.58 4.23 1.65v4.01c-1.43-.05-2.86-.35-4.17-.96-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.36 3.93-1.32 1.92-3.62 3.17-5.95 3.21-1.43.08-2.86-.31-4.07-1.07-2-1.25-3.37-3.48-3.58-5.83-.02-.5-.03-1.01-.01-1.51.18-1.92 1.12-3.78 2.63-5.02 1.7-1.44 4.1-2.13 6.3-1.74.02 1.48-.04 2.96-.04 4.44-1-.32-2.17-.23-3.03.39-.62.42-1.1 1.07-1.25 1.8-.13.58-.1 1.2.06 1.78.41 1.32 1.75 2.2 3.12 2.1.91-.02 1.79-.53 2.3-1.28.16-.28.3-.58.37-.9.1-1.69.05-3.38.06-5.07.01-3.87-.01-7.73.03-11.6z" />
+					<path fill="#fff" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.06 1.75 4.13 1.12 1.1 2.7 1.58 4.23 1.65v4.01c-1.43-.05-2.86-.35-4.17-.96-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.36 3.93-1.32 1.92-3.62 3.17-5.95 3.21-1.43.08-2.86-.31-4.07-1.07-2-1.25-3.37-3.48-3.58-5.83-.02-.5-.03-1.01-.01-1.51.18-1.92 1.12-3.78 2.63-5.02 1.7-1.44 4.1-2.13 6.3-1.74.02 1.48-.04 2.96-.04 4.44-1-.32-2.17-.23-3.03.39-.62.42-1.1 1.07-1.25 1.8-.13.58-.1 1.2.06 1.78.41 1.32 1.75 2.2 3.12 2.1.91-.02 1.79-.53 2.3-1.28.16-.28.3-.58.37-.9.1-1.69.05-3.38.06-5.07.01-3.87-.01-7.73.03-11.6z" />
+				</svg>
+				TikTok
+			</a>
+					<a class="social-link" data-platform="Instagram" href="https://www.instagram.com/glushak_drive?dlrf=NW80Nnpyd2w1am54" target="_blank" rel="noopener noreferrer">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<rect x="3" y="3" width="18" height="18" rx="5" />
+					<circle cx="12" cy="12" r="4" />
+					<circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+				</svg>
+				Instagram
+			</a>
+					<a class="social-link youtube" data-platform="YouTube" href="https://www.youtube.com/@GLUSHAKDRIVE" target="_blank" rel="noopener noreferrer">
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8Z" />
+					<path fill="#183d32" d="m9.6 15.5 6.2-3.5-6.2-3.5z" />
+				</svg>
+				YouTube
+			</a>
+				</nav>
+			</section>
+			<section class="support-area" aria-label="Wsparcie twórcy" hidden>
+				<button class="support-button" id="support-open" type="button" data-i18n-aria="support_button_aria"><span aria-hidden="true">♥</span><span data-i18n="support_button">Wesprzyj twórcę</span></button>
+			</section>
+			<section class="comments-area" aria-labelledby="comments-title">
+				<div class="comments-heading">
+					<h2 id="comments-title" data-i18n="comments_title">KOMENTARZE</h2>
+					<span class="comment-count" id="comment-count">Ładowanie…</span>
+				</div>
+				<p class="comments-intro" data-i18n="comments_intro">Podziel się swoją opinią ze społecznością GLUSHAK DRIVE.</p>
+				<form class="comment-form" id="comment-form" hidden>
+					<label class="account-field" for="comment-message"><span data-i18n="comment_label">Twój komentarz</span>
+						<textarea id="comment-message" name="message" minlength="2" maxlength="1000" placeholder="Napisz coś..." data-i18n-placeholder="comment_placeholder" required></textarea>
+					</label>
+					<div class="comment-form-footer">
+						<p class="comment-status" id="comment-status" aria-live="polite"></p>
+						<button type="submit" id="comment-submit" data-i18n="add_comment">Dodaj komentarz</button>
+					</div>
+				</form>
+				<div id="comment-login-prompt" hidden>
+					<p class="comments-intro" data-i18n="login_to_comment">Zaloguj się, aby dodać komentarz.</p>
+					<button class="comment-login" id="comment-login" type="button" data-i18n="login">Zaloguj się</button>
+				</div>
+				<div class="comment-list" id="comment-list" aria-live="polite">
+					<p class="comment-empty" data-i18n="loading_comments">Ładowanie komentarzy…</p>
+				</div>
+			</section>
+			<footer class="privacy-notice">
+				<strong data-i18n="privacy_notice_title">Prywatność i dane</strong>
+				<p data-i18n="privacy_notice_text">Adres e-mail i dane konta nie są publicznie wyświetlane. E-mail przy zamówieniu widzi tylko administrator, a prywatne wiadomości — wyłącznie uczestnicy rozmowy. Komentarze są publiczne i pokazują nazwę konta oraz treść, więc nie umieszczaj w nich danych prywatnych. Anonimowe statystyki nie zapisują adresów IP.</p>
+			</footer>
+		</main>
+		<aside class="analytics-consent" id="analytics-consent" aria-label="Zgoda na anonimowe statystyki" data-i18n-aria="analytics_aria" hidden>
+			<p data-i18n="analytics_text">Anonimowe statystyki pomogą sprawdzić liczbę odsłon, źródła wejść i kliknięcia. Nie zapisujemy adresu IP ani pełnego user-agenta.</p>
+			<div class="analytics-consent-actions">
+				<button type="button" data-consent="yes" data-i18n="consent_yes">Zgadzam się</button>
+				<button type="button" data-consent="no" data-i18n="consent_no">Nie, dziękuję</button>
+			</div>
+		</aside>
+		<script src="/analytics.js" defer></script>
+		<script src="/account.js" defer></script>
+		<script src="/comments.js" defer></script>
+		<dialog class="rules-dialog" id="rules-dialog" aria-labelledby="rules-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" data-i18n="rules_eyebrow">SPOŁECZNOŚĆ GLUSHAK DRIVE</p><h2 class="dialog-title" id="rules-title" data-i18n="rules_title">Zasady strony</h2></div>
+				<button class="dialog-close" id="rules-close" type="button" aria-label="Zamknij zasady" data-i18n-aria="close_rules">×</button>
+			</div>
+			<p data-i18n="rules_intro">Chcemy, aby GLUSHAK DRIVE było miejscem rozmowy bez hejtu i nękania. Korzystając z komentarzy, przestrzegaj poniższych zasad:</p>
+			<h3 data-i18n="rules_account_heading">Konto i widoczność</h3>
+			<ul>
+				<li data-i18n="rule_login">Aby dodać komentarz, musisz zalogować się na konto.</li>
+				<li data-i18n="rule_visible_name">Przy komentarzu widoczna jest nazwa przypisana do konta. Komentarze nie są anonimowe dla innych odwiedzających.</li>
+				<li data-i18n="rule_identity">Logowanie nie potwierdza prawdziwej tożsamości. Nie podszywaj się pod inne osoby i nie podawaj cudzych danych.</li>
+				<li data-i18n="rule_private_data">Nie publikuj swojego ani czyjegoś adresu, numeru telefonu, e-maila ani innych prywatnych informacji.</li>
+			</ul>
+			<h3 data-i18n="rules_safety_heading">Szacunek i bezpieczeństwo</h3>
+			<ul>
+				<li data-i18n="rule_no_harassment">Nie obrażaj, nie nękaj, nie groź i nie zachęcaj do przemocy.</li>
+				<li data-i18n="rule_no_hate">Nie zamieszczaj treści dyskryminujących ani nawołujących do nienawiści.</li>
+				<li data-i18n="rule_be_respectful">Krytykuj pomysły i materiały, a nie osoby. Pisz kulturalnie, nawet gdy się nie zgadzasz.</li>
+				<li data-i18n="rule_no_spam">Unikaj spamu, reklam i treści niezwiązanych z tematem strony.</li>
+			</ul>
+			<p data-i18n="rules_footer">Publikując komentarz, bierzesz odpowiedzialność za jego treść. Dbajmy wspólnie o przyjazną i bezpieczną społeczność.</p>
+		</dialog>
+		<dialog class="rules-dialog" id="order-help-dialog" aria-labelledby="order-help-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" data-i18n="order_eyebrow">PANEL KLIENTA</p><h2 class="dialog-title" id="order-help-title" data-i18n="order_title">Instrukcja zamówienia</h2></div>
+				<button class="dialog-close" id="order-help-close" type="button" aria-label="Zamknij instrukcję" data-i18n-aria="close_order">×</button>
+			</div>
+			<p data-i18n="order_intro">Zamówienie możesz złożyć po zalogowaniu na konto. Wykonaj te kroki:</p>
+			<p data-i18n="order_price_public">Cennik: 1 filmik kosztuje 20 zł. Po wysłaniu zamówienia opłać je przelewem.</p>
+			<ul>
+				<li data-i18n="order_step_account">Otwórz menu Profil i wybierz Moje konto. Jeśli nie masz konta, najpierw wybierz opcję dodania konta i utwórz je.</li>
+				<li data-i18n="order_step_message">W formularzu Nowe zamówienie opisz, czego potrzebujesz. Wiadomość musi mieć od 5 do 5000 znaków.</li>
+				<li data-i18n="order_step_file">Jeśli to potrzebne, dołącz plik o maksymalnym rozmiarze 100 MB. Załącznik jest opcjonalny.</li>
+				<li data-i18n="order_step_send">Kliknij Wyślij zamówienie. Po wysłaniu zamówienie pojawi się w sekcji Moje zamówienia.</li>
+				<li data-i18n="order_step_status">Status zamówienia i odpowiedź sprawdzisz później, ponownie otwierając swoje konto.</li>
+			</ul>
+			<p><a href="/account" data-i18n="order_account_link">Przejdź do mojego konta</a></p>
+		</dialog>
+		<dialog class="rules-dialog" id="info-dialog" aria-labelledby="info-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow">GLUSHAK DRIVE</p><h2 class="dialog-title" id="info-title" data-i18n="info_title">Informacja o twórczości</h2></div>
+				<button class="dialog-close" id="info-close" type="button" aria-label="Zamknij informację" data-i18n-aria="close_info">×</button>
+			</div>
+			<p data-i18n="info_short">Zajmuję się głównie krótkimi formami wideo i wizualnymi: YouTube Shorts, filmikami na TikToka, zdjęciami oraz krótkimi editami.</p>
+			<p data-i18n="info_not_feature">Nie tworzę pełnometrażowych filmów ani długich produkcji wideo. Jeśli składasz zamówienie, opisz krótko, jaki materiał chcesz przygotować.</p>
+		</dialog>
+		<dialog class="rules-dialog work-dialog" id="works-dialog" aria-labelledby="works-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" data-i18n="works_eyebrow">PORTFOLIO</p><h2 class="dialog-title" id="works-title" data-i18n="works_title">Moje prace</h2></div>
+				<button class="dialog-close" id="works-close" type="button" aria-label="Zamknij" data-i18n-aria="close">×</button>
+			</div>
+			<p data-i18n="works_intro">Obejrzyj wykonane przeze mnie filmy bezpośrednio na tej stronie.</p>
+			<form class="work-add-form" id="work-add-form" hidden>
+				<label class="account-field" data-i18n-label="work_title_label">Tytuł<input id="work-title-input" type="text" maxlength="100" minlength="2" required /></label>
+				<label class="account-field" data-i18n-label="work_youtube_label">Link do filmu YouTube<input id="work-url-input" type="url" maxlength="500" placeholder="https://youtu.be/..." required /></label>
+				<button class="account-submit" id="work-submit" type="submit" data-i18n="work_add">Dodaj film</button>
+				<p class="work-status work-form-status" id="work-form-status" role="status" aria-live="polite" hidden></p>
+			</form>
+			<p class="work-status" id="works-status" role="status" aria-live="polite"></p>
+			<div class="work-grid" id="work-grid"></div>
+		</dialog>
+		<script>
+			(() => {
+				const toggle = document.querySelector("#theme-toggle");
+				const root = document.documentElement;
+
+				function updateTheme(theme) {
+					root.dataset.theme = theme;
+					const key = theme === "dark" ? "theme_switch_light" : "theme_switch_dark";
+					const text = window.siteText ? window.siteText(key) : key === "theme_switch_light" ? "☀ Jasny tryb" : "☾ Ciemny tryb";
+					toggle.textContent = text;
+					toggle.setAttribute("aria-label", text.replace(/^[^\p{L}\p{N}]+\s*/u, ""));
+				}
+
+				updateTheme(root.dataset.theme);
+				toggle.addEventListener("click", () => {
+					const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
+					updateTheme(nextTheme);
+					try {
+						localStorage.setItem("glushak-theme", nextTheme);
+					} catch (error) {
+						console.error("Nie udało się zapisać wybranego motywu.", error);
+					}
+				});
+			})();
+		</script>
+		<script>
+			(() => {
+				const dialog = document.querySelector("#rules-dialog");
+				document.querySelector("#rules-open").addEventListener("click", () => dialog.showModal());
+				document.querySelector("#rules-close").addEventListener("click", () => dialog.close());
+				dialog.addEventListener("click", (event) => {
+					if (event.target === dialog) dialog.close();
+				});
+			})();
+		</script>
+		<script>
+			(() => {
+				const dialog = document.querySelector("#order-help-dialog");
+				const openButton = document.querySelector("#order-help-open");
+				const updateVisibility = async () => {
+					try {
+						const response = await fetch("/api/orders/settings", { cache: "no-store" });
+						if (!response.ok) throw new Error(`Order settings request failed: ${response.status}`);
+						const settings = await response.json();
+						openButton.hidden = settings.enabled !== true;
+						if (openButton.hidden && dialog.open) dialog.close();
+					} catch (error) {
+						console.error("Nie udało się sprawdzić dostępności instrukcji zamówienia.", error);
+						openButton.hidden = true;
+						if (dialog.open) dialog.close();
+					}
+				};
+				openButton.addEventListener("click", () => dialog.showModal());
+				document.querySelector("#order-help-close").addEventListener("click", () => dialog.close());
+				dialog.addEventListener("click", (event) => {
+					if (event.target === dialog) dialog.close();
+				});
+				document.addEventListener("visibilitychange", () => {
+					if (!document.hidden) updateVisibility();
+				});
+				updateVisibility();
+				setInterval(updateVisibility, 15000);
+			})();
+		</script>
+		<script>
+			(() => {
+				const dialog = document.querySelector("#info-dialog");
+				document.querySelector("#info-open").addEventListener("click", () => dialog.showModal());
+				document.querySelector("#info-close").addEventListener("click", () => dialog.close());
+				dialog.addEventListener("click", (event) => {
+					if (event.target === dialog) dialog.close();
+				});
+			})();
+		</script>
+		<dialog class="account-dialog" id="account-dialog" aria-labelledby="account-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" id="dialog-eyebrow">KONTO</p><h2 class="dialog-title" id="account-title">Zaloguj się</h2></div>
+				<button class="dialog-close" id="dialog-close" type="button" aria-label="Zamknij" data-i18n-aria="close">×</button>
+			</div>
+			<p class="dialog-help" id="dialog-help">Zaloguj się, aby zarządzać swoim kontem.</p>
+			<form class="account-form" id="account-form">
+				<label class="account-field" id="name-field" hidden data-i18n-label="name_label">Imię lub nazwa<input id="account-name" name="name" autocomplete="name" minlength="2" maxlength="50" /></label>
+				<label class="account-field" data-i18n-label="email_label">E-mail<input id="account-email" name="email" type="email" autocomplete="email" maxlength="254" required /></label>
+				<label class="account-field" data-i18n-label="password_label">Hasło<input id="account-password" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="256" required /></label>
+				<p class="account-error" id="account-error" role="alert" hidden></p>
+				<button class="account-submit" id="account-submit" type="submit">Zaloguj się</button>
+			</form>
+			<button class="account-switch" id="account-switch" type="button" hidden></button>
+		</dialog>
+		<dialog class="account-dialog" id="notifications-dialog" aria-labelledby="notifications-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" data-i18n="notifications_button">POWIADOMIENIA</p><h2 class="dialog-title" id="notifications-title" data-i18n="notifications_title">Powiadomienia</h2></div>
+				<button class="dialog-close" id="notifications-close" type="button" aria-label="Zamknij" data-i18n-aria="close">×</button>
+			</div>
+			<div class="notification-toolbar"><button class="notification-read-button" id="notifications-mark-read" type="button" data-i18n="notifications_mark_read">Oznacz wszystkie jako przeczytane</button></div>
+			<div class="notification-list" id="notifications-list" aria-live="polite"><p class="notification-empty" data-i18n="notifications_loading">Wczytywanie powiadomień…</p></div>
+		</dialog>
+		<dialog class="rules-dialog messages-dialog" id="messages-dialog" aria-labelledby="messages-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" data-i18n="messages_eyebrow">WIADOMOŚCI</p><h2 class="dialog-title" id="messages-title" data-i18n="messages_inbox">Czat</h2></div>
+				<button class="dialog-close" id="messages-close" type="button" aria-label="Zamknij" data-i18n-aria="close">×</button>
+			</div>
+			<div class="messages-layout">
+				<aside class="conversation-sidebar" aria-label="Rozmowy">
+					<form class="conversation-search" id="message-contact-form">
+						<p data-i18n="messages_intro">Wpisz e-mail znajomego zarejestrowanego na stronie, aby rozpocząć czat.</p>
+						<div class="conversation-search-row">
+							<label class="visually-hidden" for="friend-email" data-i18n="friend_email">E-mail znajomego</label>
+							<input id="friend-email" type="email" autocomplete="email" maxlength="254" placeholder="E-mail znajomego" data-i18n-placeholder="friend_email" required />
+							<button type="submit" aria-label="Rozpocznij czat" data-i18n-aria="messages_start_chat">+</button>
+						</div>
+					</form>
+					<div class="conversation-list" id="conversation-list" aria-label="Lista rozmów" data-i18n-aria="messages_conversations">
+						<p data-i18n="messages_loading">Wczytywanie wiadomości…</p>
+					</div>
+				</aside>
+				<section class="chat-thread" aria-label="Wątek czatu" data-i18n-aria="messages_thread">
+					<header class="chat-header">
+						<span class="conversation-avatar" id="chat-avatar" aria-hidden="true">?</span>
+						<div><strong class="chat-header-name" id="chat-name" data-i18n="messages_choose_chat">Wybierz rozmowę</strong><span class="chat-header-status" id="chat-status"></span></div>
+					</header>
+					<div class="chat-thread-body" id="message-list" aria-live="polite"><p data-i18n="messages_choose_chat">Wybierz rozmowę lub rozpocznij nową, wpisując e-mail znajomego.</p></div>
+					<p class="account-error" id="message-feedback" role="status" aria-live="polite" hidden></p>
+					<div class="message-image-preview" id="message-image-preview" hidden>
+						<div id="message-image-preview-content"></div>
+						<button id="message-image-remove" type="button" aria-label="Usuń wybrany obraz" data-i18n-aria="message_image_remove">×</button>
+					</div>
+					<form class="message-composer" id="message-form">
+						<label class="visually-hidden" for="friend-message" data-i18n="private_message">Wiadomość</label>
+						<input class="visually-hidden" id="message-image" type="file" accept="image/jpeg,image/png" disabled />
+						<button id="message-image-select" type="button" aria-label="Dodaj obraz" data-i18n-aria="message_image_attach" disabled>▧</button>
+						<textarea id="friend-message" maxlength="2000" placeholder="Napisz wiadomość…" data-i18n-placeholder="messages_compose_placeholder" disabled></textarea>
+						<button id="message-submit" type="submit" aria-label="Wyślij wiadomość" data-i18n-aria="send_message" disabled>➤</button>
+					</form>
+				</section>
+			</div>
+		</dialog>
+		<dialog class="account-dialog rules-dialog support-dialog" id="support-dialog" aria-labelledby="support-title">
+			<div class="dialog-top">
+				<div><p class="dialog-eyebrow" data-i18n="support_eyebrow">WSPARCIE TWÓRCY</p><h2 class="dialog-title" id="support-title" data-i18n="support_title">Wesprzyj GLUSHAK DRIVE</h2></div>
+				<button class="dialog-close" id="support-close" type="button" aria-label="Zamknij" data-i18n-aria="close">×</button>
+			</div>
+			<p data-i18n="support_intro">Wybierz kwotę, a pokażemy dane do zwykłego przelewu bankowego.</p>
+			<form class="account-form" id="support-form">
+				<label class="account-field" data-i18n-label="support_amount">Kwota wsparcia (zł)<input id="support-amount" type="number" min="1" max="1000000" step="0.01" inputmode="decimal" required /></label>
+				<p class="account-error" id="support-feedback" role="status" aria-live="polite" hidden></p>
+				<button class="account-submit" id="support-submit" type="submit" data-i18n="support_show_transfer">Pokaż dane do przelewu</button>
+			</form>
+			<div class="support-details" id="support-details" hidden>
+				<p><span data-i18n="support_recipient">Odbiorca</span><strong id="support-holder"></strong></p>
+				<p><span data-i18n="support_account">Numer rachunku (IBAN)</span><code id="support-iban"></code></p>
+				<p><span data-i18n="support_transfer_amount">Kwota przelewu</span><strong id="support-transfer-amount"></strong></p>
+				<p><span data-i18n="support_transfer_title">Tytuł przelewu</span><code id="support-title-value"></code></p>
+				<p class="support-note" data-i18n="support_manual_note">Przelew wykonujesz samodzielnie w swoim banku. Strona nie pobiera ani nie potwierdza wpłat automatycznie.</p>
+			</div>
+		</dialog>
+		<script src="/i18n.js"></script>
+		<script src="/messages.js" defer></script>
+		<script src="/support.js" defer></script>
+		<script src="/works.js" defer></script>
+		<script src="/notifications.js" defer></script>
+	</body>
+</html>

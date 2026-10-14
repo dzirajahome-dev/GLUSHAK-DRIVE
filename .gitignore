@@ -1,0 +1,12 @@
+/node_modules/
+/.env
+/.env.*
+!/.env.example
+/analytics.json
+/users.json
+/orders.json
+/payments.json
+/support-settings.json
+/order-settings.json
+/engagement.json
+/.uploads/

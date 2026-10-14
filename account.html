@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pl">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Moje konto | GLUSHAK DRIVE</title>
+		<style>
+			:root { color-scheme: dark; font-family: Arial, sans-serif; background: #000; color: #f4f3f1; }
+			* { box-sizing: border-box; }
+			body { position: relative; isolation: isolate; min-width: 320px; min-height: 100vh; margin: 0; background: #000; }
+			body::before { position: fixed; z-index: -1; inset: -24%; pointer-events: none; background: radial-gradient(ellipse at 18% 28%, #ff173b8c, transparent 38%), radial-gradient(ellipse at 77% 31%, #7428ff82, transparent 42%), radial-gradient(ellipse at 54% 78%, #00d9b878, transparent 40%), radial-gradient(ellipse at 91% 82%, #00aaff55, transparent 38%); filter: blur(64px) saturate(150%); opacity: .8; content: ""; animation: rgb-flow 32s ease-in-out infinite alternate; }
+			@keyframes rgb-flow { 0% { transform: translate3d(-4%, -2%, 0) scale(1) rotate(-5deg); filter: blur(64px) saturate(150%) hue-rotate(0deg); } 50% { transform: translate3d(3%, 3%, 0) scale(1.08) rotate(5deg); filter: blur(72px) saturate(165%) hue-rotate(90deg); } 100% { transform: translate3d(-1%, 4%, 0) scale(1.03) rotate(-3deg); filter: blur(66px) saturate(155%) hue-rotate(210deg); } }
+			@media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
+			button, input, textarea { font: inherit; }
+			.shell { width: min(100% - 36px, 1120px); margin: 0 auto; padding: 26px 0 56px; }
+			.locale-control { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+			.language-select { width: min(180px, 100%); min-height: 34px; padding: 0 8px; border: 1px solid #ffffff30; border-radius: 5px; background: #17181e; color: #f4f3f1; font: 700 11px Arial, sans-serif; }
+			.language-select:focus-visible { outline: 2px solid #e5233e; outline-offset: 2px; }
+			.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+			.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #ffffff18; }
+			.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+			.brand img { width: 42px; height: 42px; flex: 0 0 42px; border: 2px solid #e5233e; border-radius: 50%; object-fit: cover; }
+			.brand strong { display: block; font-size: 13px; }
+			.brand span { display: block; margin-top: 4px; color: #858790; font-size: 10px; }
+			.top-actions { display: flex; align-items: center; gap: 16px; }
+			.back-link { color: #bfc0c6; font-size: 12px; text-decoration: none; }
+			.back-link:hover { color: #fff; }
+			.logout { min-height: 36px; padding: 0 12px; border: 1px solid #ffffff25; border-radius: 4px; background: #17181e; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; }
+			.logout:hover { border-color: #e5233e; }
+			.heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 28px 0 19px; }
+			h1 { margin: 0; font-size: 29px; }
+			.heading p { margin: 6px 0 0; color: #a0a1a9; font-size: 13px; }
+			.user-email { color: #9698a1; font-size: 12px; overflow-wrap: anywhere; }
+			.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+			.summary-item, .panel { min-width: 0; border: 1px solid #ffffff17; border-radius: 6px; background: #14151a; }
+			.summary-item { min-height: 92px; padding: 14px 16px; }
+			.summary-label { color: #a0a1a9; font-size: 11px; }
+			.summary-value { display: block; margin-top: 12px; color: #fff; font-size: 23px; font-weight: 700; font-variant-numeric: tabular-nums; }
+			.badges-panel { margin-top: 11px; }
+			.badges-intro { margin: -6px 0 15px; color: #a0a1a9; font-size: 11px; line-height: 1.5; }
+			.badges-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 9px; }
+			.community-badge { padding: 12px; border: 1px solid #ffffff18; border-radius: 4px; background: #101115; }
+			.community-badge.earned { border-color: #65c99a66; }
+			.community-badge strong { display: block; color: #eeeef0; font-size: 12px; }
+			.community-badge p { margin: 6px 0 9px; color: #9698a1; font-size: 10px; line-height: 1.5; }
+			.community-badge span { color: #aeb0b7; font-size: 10px; }
+			.community-badge.earned span { color: #83d5aa; }
+			.work-grid { display: grid; grid-template-columns: minmax(300px, .88fr) minmax(0, 1.45fr); gap: 11px; margin-top: 11px; }
+			.panel { padding: 18px; }
+			h2 { margin: 0; font-size: 14px; }
+			.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+			.panel-count { color: #858790; font-size: 11px; }
+			.order-form { display: grid; gap: 12px; }
+			.field { display: grid; gap: 7px; color: #d7d7da; font-size: 11px; font-weight: 700; }
+			.field input[type="number"] { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid #ffffff25; border-radius: 4px; background: #0e0f13; color: #fff; font-size: 13px; }
+			.field input[type="number"]:focus { border-color: #e5233e; outline: 2px solid #e5233e55; }
+			.field textarea { min-height: 135px; resize: vertical; }
+			.field textarea, .file-picker { width: 100%; padding: 11px 12px; border: 1px solid #ffffff25; border-radius: 4px; background: #0e0f13; color: #fff; font-size: 13px; }
+			.field textarea:focus, .file-picker:focus-visible { border-color: #e5233e; outline: 2px solid #e5233e55; }
+			.file-picker { padding: 9px; }
+			.file-picker::file-selector-button { min-height: 31px; margin-right: 10px; padding: 0 10px; border: 1px solid #ffffff25; border-radius: 3px; background: #202127; color: #fff; cursor: pointer; }
+			.file-note { color: #888a94; font-size: 10px; font-weight: 400; }
+			.file-name { min-height: 15px; overflow-wrap: anywhere; color: #c9cacf; font-size: 11px; }
+			.submit-order { min-height: 43px; padding: 0 14px; border: 0; border-radius: 4px; background: #e5233e; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
+			.submit-order:hover { background: #c91d34; }
+			.submit-order:disabled { opacity: .65; cursor: wait; }
+			.notice { margin: 0; color: #9698a1; font-size: 11px; line-height: 1.5; }
+			.capacity-note { margin: 0; padding: 10px 11px; border: 1px solid #e5233e45; border-radius: 4px; background: #e5233e12; color: #ffc2c9; font-size: 11px; line-height: 1.5; }
+			.error { margin: 0; color: #ff8795; font-size: 11px; line-height: 1.5; }
+			.success { margin: 0; color: #76d7a3; font-size: 11px; line-height: 1.5; }
+			.empty { padding: 12px 0; color: #82848d; font-size: 12px; line-height: 1.5; }
+			.order-list { display: grid; gap: 9px; max-height: 460px; overflow: auto; }
+			.order { padding: 12px; border: 1px solid #ffffff14; border-radius: 4px; background: #101115; }
+			.order-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+			.order-date { color: #8f919a; font-size: 10px; }
+			.order-cost, .order-payment-state { margin: 8px 0 0; color: #c9cacf; font-size: 11px; }
+			.order-payment-state { color: #efb272; }
+			.order-price-summary { margin: 0; padding: 10px 11px; border: 1px solid #ffffff20; border-radius: 4px; color: #e8e8eb; font-size: 12px; line-height: 1.5; }
+			.order-payment { display: grid; gap: 6px; margin-top: 10px; padding: 11px; border: 1px solid #65c99a55; border-radius: 4px; background: #65c99a0e; color: #e3f5ea; font-size: 11px; overflow-wrap: anywhere; }
+			.order-payment[hidden] { display: none; }
+			.order-payment p { margin: 0; }
+			.show-payment-details { min-height: 32px; margin-top: 10px; padding: 0 10px; border: 1px solid #ffffff25; border-radius: 4px; background: #202127; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; }
+			.status { padding: 5px 8px; border: 1px solid #ffffff20; border-radius: 3px; color: #d7d7da; font-size: 10px; white-space: nowrap; }
+			.status.new { border-color: #e5233e66; color: #ff7d8c; }
+			.status.in-progress { border-color: #d98a3d77; color: #efb272; }
+			.status.completed { border-color: #65c99a66; color: #83d5aa; }
+			.order-message { margin: 10px 0; color: #ececef; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+			.attachment { display: inline-flex; align-items: center; gap: 7px; color: #f17b8b; font-size: 11px; text-decoration: none; overflow-wrap: anywhere; }
+			.attachment:hover { color: #fff; text-decoration: underline; }
+			.payments-panel { margin-top: 11px; }
+			.table-wrap { overflow-x: auto; }
+			.payment-table { width: 100%; border-collapse: collapse; text-align: left; }
+			.payment-table th { padding: 0 10px 11px; color: #80828c; font-size: 9px; font-weight: 700; }
+			.payment-table td { padding: 12px 10px; border-top: 1px solid #ffffff14; color: #d7d7da; font-size: 11px; vertical-align: middle; }
+			.payment-table th:first-child, .payment-table td:first-child { padding-left: 0; }
+			.amount { color: #fff; font-weight: 700; white-space: nowrap; }
+			.payment-status { display: inline-block; padding: 5px 8px; border-radius: 3px; background: #ffffff10; color: #c4c5ca; font-size: 10px; white-space: nowrap; }
+			.payment-status.paid { background: #65c99a1a; color: #83d5aa; }
+			.payment-status.pending { background: #d98a3d1a; color: #efb272; }
+			@media (max-width: 760px) {
+				.shell { width: min(100% - 28px, 1120px); padding-top: 16px; }
+				.summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+				.summary-item { min-height: 84px; }
+				.work-grid { grid-template-columns: 1fr; gap: 9px; margin-top: 9px; }
+				.panel, .payments-panel { padding: 15px; }
+				.payments-panel { margin-top: 9px; }
+			}
+			@media (max-width: 420px) {
+				.shell { width: min(100% - 24px, 1120px); }
+				.locale-control { margin-bottom: 10px; }
+				.language-select { width: 100%; }
+				.topbar { align-items: flex-start; }
+				.top-actions { align-items: flex-end; flex-direction: column; gap: 8px; }
+				.logout { min-height: 32px; }
+				.heading { align-items: flex-start; flex-direction: column; gap: 7px; }
+				.heading h1 { font-size: 26px; }
+				.panel { padding: 13px; }
+				.payment-table th, .payment-table td { padding-right: 6px; padding-left: 6px; font-size: 10px; }
+			}
+		</style>
+	</head>
+	<body>
+		<main class="shell">
+			<div class="locale-control"><label class="visually-hidden" for="language-select" data-i18n="language_label">Język</label><select class="language-select" id="language-select" aria-label="Język" data-i18n-aria="language_label"><option value="pl">Polski</option><option value="en">English</option><option value="uk">Українська</option><option value="de">Deutsch</option><option value="es">Español</option><option value="fr">Français</option><option value="it">Italiano</option><option value="pt">Português</option><option value="ru">Русский</option><option value="zh">中文</option></select></div>
+			<header class="topbar">
+				<div class="brand"><img src="/channel-avatar.jpg" alt="" /><div><strong>GLUSHAK DRIVE</strong><span data-i18n="client_panel">PANEL KLIENTA</span></div></div>
+				<div class="top-actions"><a class="back-link" href="/" data-i18n="home_link">← Strona główna</a><button class="logout" id="logout" type="button" data-i18n="logout">Wyloguj się</button></div>
+			</header>
+			<section class="heading"><div><h1 data-i18n="account_title">Moje konto</h1><p data-i18n="account_subtitle">Zamówienia i historia opłat</p></div><span class="user-email" id="user-email"></span></section>
+			<section class="summary" aria-label="Podsumowanie konta" data-i18n-aria="account_summary">
+				<article class="summary-item"><span class="summary-label" data-i18n="my_orders">Moje zamówienia</span><strong class="summary-value" id="order-total">0</strong></article>
+				<article class="summary-item"><span class="summary-label" data-i18n="in_progress">W realizacji</span><strong class="summary-value" id="order-open">0</strong></article>
+				<article class="summary-item"><span class="summary-label" data-i18n="paid">Opłacone</span><strong class="summary-value" id="paid-total">0 zł</strong></article>
+				<article class="summary-item"><span class="summary-label" data-i18n="payment_history_count">Pozycje historii opłat</span><strong class="summary-value" id="payment-total">0</strong></article>
+			</section>
+			<section class="panel badges-panel" aria-labelledby="community-badges-title">
+				<div class="panel-head"><h2 id="community-badges-title" data-i18n="community_badges">Odznaki społeczności</h2></div>
+				<p class="badges-intro" data-i18n="community_badges_intro">Odznaki za udział w rozmowie ze społecznością.</p>
+				<div class="badges-grid" id="community-badges" aria-live="polite"><p class="empty" data-i18n="notifications_loading">Wczytywanie…</p></div>
+			</section>
+			<section class="work-grid">
+				<article class="panel" id="order-creation-panel" hidden>
+					<div class="panel-head"><h2 data-i18n="new_order">Nowe zamówienie</h2></div>
+					<p class="notice" id="ordering-unavailable-note" data-i18n="ordering_unavailable" hidden>Składanie zamówień jest obecnie wyłączone.</p>
+					<form class="order-form" id="order-form">
+						<label class="field"><span data-i18n="message_label">Wiadomość</span><textarea id="order-message" minlength="5" maxlength="5000" required placeholder="Opisz, czego potrzebujesz..." data-i18n-placeholder="order_placeholder"></textarea></label>
+						<p class="capacity-note" id="weekly-capacity" role="status" aria-live="polite" data-i18n="orders_capacity_loading">W tym tygodniu można zamówić maksymalnie 6 filmików. Sprawdzanie dostępności…</p>
+						<label class="field"><span data-i18n="order_quantity">Ilość filmików</span><input id="order-quantity" type="number" min="1" max="6" step="1" value="1" required /></label>
+						<p class="order-price-summary" id="order-price-summary" aria-live="polite"></p>
+						<label class="field"><span data-i18n="attachment_label">Załącznik</span> <span class="file-note" data-i18n="attachment_note">opcjonalnie · maks. 100 MB</span><input class="file-picker" id="order-file" type="file" /></label>
+						<span class="file-name" id="file-name" data-i18n="no_file">Nie wybrano pliku</span>
+						<p class="error" id="order-error" role="alert" hidden></p>
+						<p class="success" id="order-success" role="status" hidden></p>
+						<div class="order-payment" id="new-order-payment" role="status" aria-live="polite" hidden></div>
+						<button class="submit-order" id="submit-order" type="submit" data-i18n="submit_order">Wyślij zamówienie</button>
+						<p class="notice" data-i18n="order_notice">Status i odpowiedź do zamówienia zobaczysz na tym koncie.</p>
+					</form>
+				</article>
+				<article class="panel">
+					<div class="panel-head"><h2 data-i18n="my_orders">Moje zamówienia</h2><span class="panel-count" id="orders-count">0</span></div>
+					<div class="order-list" id="orders-list"><p class="empty" data-i18n="loading_orders">Wczytywanie zamówień…</p></div>
+				</article>
+			</section>
+			<section class="panel payments-panel">
+				<div class="panel-head"><h2 data-i18n="payments_history">Historia opłat</h2><span class="panel-count" id="payments-count">0</span></div>
+				<div class="table-wrap" id="payments-wrap"><p class="empty" data-i18n="loading_payments">Wczytywanie historii opłat…</p></div>
+			</section>
+		</main>
+		<script src="/i18n.js"></script>
+		<script src="/community-badges.js" defer></script>
+		<script>
+			const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+			const text = (key) => window.siteText(key);
+			const formatFileSize = (bytes) => new Intl.NumberFormat(window.siteLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(bytes / (1024 * 1024));
+			const orderStatuses = { new: "status_new", "in-progress": "status_progress", completed: "status_completed", cancelled: "status_cancelled" };
+			const paymentStatuses = { paid: "status_paid", pending: "status_pending", cancelled: "status_cancelled" };
+			const formatDate = (value) => new Intl.DateTimeFormat(window.siteLocale(), { dateStyle: "medium" }).format(new Date(value));
+			const formatMoney = (value, currency = "PLN") => new Intl.NumberFormat(window.siteLocale(), { style: "currency", currency }).format(value / 100);
+			const videoPriceGrosze = 2000;
+			let orderCapacity = { limit: 6, remaining: 6 };
+			let sendingOrder = false;
+			let latestPaymentInstructions = null;
+
+			function renderOrderCapacity(capacity) {
+				orderCapacity = capacity;
+				const notice = document.querySelector("#weekly-capacity");
+				notice.textContent = text(capacity.remaining ? "orders_capacity_available" : "orders_capacity_full")
+					.replace("{remaining}", new Intl.NumberFormat(window.siteLocale()).format(capacity.remaining))
+					.replace("{limit}", new Intl.NumberFormat(window.siteLocale()).format(capacity.limit));
+				document.querySelector("#submit-order").disabled = sendingOrder || capacity.remaining === 0;
+				document.querySelector("#order-quantity").max = String(Math.max(1, Math.min(6, capacity.remaining)));
+				if (capacity.remaining > 0 && Number(document.querySelector("#order-quantity").value) > capacity.remaining) {
+					document.querySelector("#order-quantity").value = String(capacity.remaining);
+				}
+			}
+
+			function renderOrderingAvailability(enabled) {
+				document.querySelector("#order-creation-panel").hidden = false;
+				document.querySelector("#order-form").hidden = !enabled;
+				document.querySelector("#ordering-unavailable-note").hidden = enabled;
+			}
+
+			function renderOrderPrice() {
+				const quantity = Math.max(1, Number(document.querySelector("#order-quantity").value) || 1);
+				document.querySelector("#order-price-summary").textContent = text("order_price_summary")
+					.replace("{unit}", formatMoney(videoPriceGrosze))
+					.replace("{quantity}", new Intl.NumberFormat(window.siteLocale()).format(quantity))
+					.replace("{total}", formatMoney(quantity * videoPriceGrosze));
+			}
+
+			function paymentMarkup(instructions) {
+				return `<p><strong>${escapeHtml(text("order_transfer_title"))}</strong></p><p>${escapeHtml(text("payee"))}: ${escapeHtml(instructions.holder)}</p><p>IBAN: <strong>${escapeHtml(instructions.iban)}</strong></p><p>${escapeHtml(text("amount"))}: <strong>${escapeHtml(formatMoney(instructions.amountGrosze, instructions.currency || "PLN"))}</strong></p><p>${escapeHtml(text("transfer_reference"))}: <strong>${escapeHtml(instructions.title)}</strong></p><p>${escapeHtml(text("order_transfer_note"))}</p>`;
+			}
+
+			async function showOrderPayment(orderId, target) {
+				target.hidden = false;
+				target.textContent = text("order_payment_loading");
+				try {
+					const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/payment-details`, { cache: "no-store" });
+					const result = await response.json();
+					if (!response.ok) throw new Error(result.code === "payment_unconfigured" ? "order_payment_unconfigured" : "order_payment_error");
+					target.innerHTML = paymentMarkup(result.paymentInstructions);
+				} catch (error) {
+					target.textContent = text(error.message === "order_payment_unconfigured" ? error.message : "order_payment_error");
+				}
+			}
+
+			function renderOrders(orders) {
+				const container = document.querySelector("#orders-list");
+				document.querySelector("#order-total").textContent = orders.length;
+				document.querySelector("#orders-count").textContent = text(orders.length === 1 ? "order_count_one" : "order_count").replace("{count}", String(orders.length));
+				document.querySelector("#order-open").textContent = orders.filter((order) => ["new", "in-progress"].includes(order.status)).length;
+				if (!orders.length) {
+					container.innerHTML = `<p class="empty">${escapeHtml(text("empty_orders"))}</p>`;
+					return;
+				}
+				container.innerHTML = orders.map((order) => {
+					const status = text(orderStatuses[order.status] || "status_new");
+					const attachment = order.attachment
+						? `<a class="attachment" href="/api/orders/${encodeURIComponent(order.id)}/file">↓ ${escapeHtml(order.attachment.name)} · ${formatFileSize(order.attachment.size)} MB</a>`
+						: "";
+					const paymentStatus = text(order.paymentStatus === "paid" ? "status_paid" : order.paymentStatus === "cancelled" ? "status_cancelled" : "status_pending");
+					const paymentAction = order.paymentStatus !== "paid" && order.status !== "cancelled"
+						? `<button class="show-payment-details" type="button" data-payment-order="${escapeHtml(order.id)}">${escapeHtml(text("show_transfer_details"))}</button><div class="order-payment" data-payment-details="${escapeHtml(order.id)}" hidden></div>`
+						: "";
+					const total = order.totalAmountGrosze || (order.quantity ?? 1) * videoPriceGrosze;
+					return `<article class="order"><div class="order-head"><time class="order-date" datetime="${escapeHtml(order.createdAt)}">${escapeHtml(formatDate(order.createdAt))}</time><span class="status ${escapeHtml(order.status)}">${escapeHtml(status)}</span></div><p class="order-message">${escapeHtml(order.message)}</p><p class="order-quantity">${escapeHtml(text("order_quantity"))}: ${escapeHtml(order.quantity ?? 1)}</p><p class="order-cost">${escapeHtml(text("order_total"))}: ${escapeHtml(formatMoney(total))}</p><p class="order-payment-state">${escapeHtml(text("payment_status"))}: ${escapeHtml(paymentStatus)}</p>${attachment}${paymentAction}</article>`;
+				}).join("");
+			}
+
+			function renderPayments(payments) {
+				const container = document.querySelector("#payments-wrap");
+				const paid = payments.filter((payment) => payment.status === "paid").reduce((sum, payment) => sum + payment.amountGrosze, 0);
+				document.querySelector("#payment-total").textContent = payments.length;
+				document.querySelector("#payments-count").textContent = text(payments.length === 1 ? "payment_count_one" : "payment_count").replace("{count}", String(payments.length));
+				document.querySelector("#paid-total").textContent = formatMoney(paid);
+				document.querySelector("#paid-total").dataset.amount = paid;
+				if (!payments.length) {
+					container.innerHTML = `<p class="empty">${escapeHtml(text("empty_payments"))}</p>`;
+					return;
+				}
+				const rows = payments.map((payment) => {
+					const status = text(paymentStatuses[payment.status] || "status_pending");
+					return `<tr><td>${escapeHtml(formatDate(payment.date))}</td><td>${escapeHtml(payment.description)}</td><td class="amount">${escapeHtml(formatMoney(payment.amountGrosze, payment.currency || "PLN"))}</td><td><span class="payment-status ${escapeHtml(payment.status)}">${escapeHtml(status)}</span></td></tr>`;
+				}).join("");
+				container.innerHTML = `<table class="payment-table"><thead><tr><th>${escapeHtml(text("date"))}</th><th>${escapeHtml(text("description"))}</th><th>${escapeHtml(text("amount"))}</th><th>${escapeHtml(text("status"))}</th></tr></thead><tbody>${rows}</tbody></table>`;
+			}
+
+			async function refreshAccount() {
+				const response = await fetch("/api/account", { cache: "no-store" });
+				if (response.status === 401) {
+					window.location.assign("/?auth=required");
+					return;
+				}
+				if (!response.ok) throw new Error(text("account_error"));
+				const data = await response.json();
+				document.querySelector("#user-email").textContent = data.user.email;
+				renderOrders(data.orders);
+				renderPayments(data.payments);
+				renderOrderCapacity(data.orderCapacity);
+				renderOrderPrice();
+				renderOrderingAvailability(data.orderingEnabled);
+			}
+
+			const fileInput = document.querySelector("#order-file");
+			document.querySelector("#order-quantity").addEventListener("input", renderOrderPrice);
+			document.querySelector("#orders-list").addEventListener("click", (event) => {
+				const button = event.target.closest("[data-payment-order]");
+				if (!button) return;
+				const target = document.querySelector(`[data-payment-details="${CSS.escape(button.dataset.paymentOrder)}"]`);
+				if (target) showOrderPayment(button.dataset.paymentOrder, target);
+			});
+			fileInput.addEventListener("change", () => {
+				const file = fileInput.files[0];
+				document.querySelector("#file-name").textContent = file ? `${file.name} · ${formatFileSize(file.size)} MB` : text("no_file");
+			});
+			document.querySelector("#order-form").addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const error = document.querySelector("#order-error");
+				const success = document.querySelector("#order-success");
+				const submit = document.querySelector("#submit-order");
+				const file = fileInput.files[0];
+				error.hidden = true;
+				success.hidden = true;
+				if (file && file.size > 100 * 1024 * 1024) {
+					error.textContent = text("file_too_large");
+					error.hidden = false;
+					return;
+				}
+				const quantity = Number(document.querySelector("#order-quantity").value);
+				if (!Number.isInteger(quantity) || quantity < 1 || quantity > orderCapacity.remaining) {
+					error.textContent = text("orders_capacity_quantity_error").replace("{remaining}", String(orderCapacity.remaining));
+					error.hidden = false;
+					refreshAccount().catch((requestError) => console.error("Nie udało się odświeżyć dostępności zamówień.", requestError));
+					return;
+				}
+				sendingOrder = true;
+				renderOrderCapacity(orderCapacity);
+				submit.disabled = true;
+				submit.textContent = text("send_progress");
+				try {
+					let attachment;
+					if (file) {
+						const dataUrl = await new Promise((resolve, reject) => {
+							const reader = new FileReader();
+							reader.onload = () => resolve(reader.result);
+							reader.onerror = () => reject(new Error(text("file_read_error")));
+							reader.readAsDataURL(file);
+						});
+						attachment = { name: file.name, type: file.type, data: String(dataUrl).split(",")[1] };
+					}
+					const response = await fetch("/api/orders", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							message: document.querySelector("#order-message").value,
+							quantity,
+							attachment,
+						}),
+					});
+					const result = await response.json();
+					if (!response.ok) {
+						if (result.code === "ordering_disabled") {
+							renderOrderingAvailability(false);
+							return;
+						}
+						if (result.code === "weekly_capacity") {
+							error.textContent = text("orders_capacity_quantity_error").replace("{remaining}", String(result.remaining));
+							error.hidden = false;
+							await refreshAccount();
+							return;
+						}
+						throw new Error(text("send_order_error"));
+					}
+					event.target.reset();
+					document.querySelector("#file-name").textContent = text("no_file");
+					success.textContent = text("order_success");
+					success.hidden = false;
+					const paymentPanel = document.querySelector("#new-order-payment");
+					latestPaymentInstructions = result.paymentInstructions || null;
+					paymentPanel.innerHTML = latestPaymentInstructions
+						? paymentMarkup(latestPaymentInstructions)
+						: escapeHtml(text("order_payment_unconfigured"));
+					paymentPanel.hidden = false;
+					await refreshAccount();
+				} catch (requestError) {
+					error.textContent = [text("file_read_error"), text("send_order_error")].includes(requestError.message) ? requestError.message : text("send_order_error");
+					error.hidden = false;
+				} finally {
+					sendingOrder = false;
+					submit.textContent = text("submit_order");
+					renderOrderCapacity(orderCapacity);
+				}
+			});
+			document.addEventListener("languagechange", () => {
+				document.querySelector("#paid-total").textContent = formatMoney(Number(document.querySelector("#paid-total").dataset.amount || 0));
+				renderOrderPrice();
+				const paymentPanel = document.querySelector("#new-order-payment");
+				if (!paymentPanel.hidden) {
+					paymentPanel.innerHTML = latestPaymentInstructions
+						? paymentMarkup(latestPaymentInstructions)
+						: escapeHtml(text("order_payment_unconfigured"));
+				}
+				if (fileInput.files[0]) fileInput.dispatchEvent(new Event("change"));
+				refreshAccount().catch(() => {
+					document.querySelector("#orders-list").innerHTML = `<p class="error">${escapeHtml(text("account_error"))}</p>`;
+				});
+			});
+			document.querySelector("#logout").addEventListener("click", async () => {
+				await fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+				window.location.assign("/");
+			});
+			refreshAccount().catch(() => {
+				document.querySelector("#orders-list").innerHTML = `<p class="error">${escapeHtml(text("account_error"))}</p>`;
+			});
+			setInterval(() => refreshAccount().catch((error) => console.error("Nie udało się odświeżyć dostępności zamówień.", error)), 60000);
+		</script>
+	</body>
+</html>
