@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /account
+Disallow: /account.html
+Disallow: /studio
+Disallow: /studio.html
+
+Sitemap: https://glushakdriive.vercel.app/sitemap.xml
