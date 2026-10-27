@@ -1,6 +1,7 @@
 {
   "scripts": {
     "dev": "node server.cjs",
+    "build": "vite build",
     "migrate:orders": "node scripts/migrate-orders-to-supabase.cjs"
   },
   "dependencies": {
@@ -12,5 +13,8 @@
   },
   "allowScripts": {
     "core-js@3.29.1": true
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
   }
 }
