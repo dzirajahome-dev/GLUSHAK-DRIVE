@@ -70,6 +70,23 @@ Refresh the database periodically using the same command. Do not commit the lice
 
 In-page notifications track newly added works and changes to the signed-in user's order and payment statuses. Per-user read state and initial baselines are stored in the local `engagement.json` file; keep it on persistent server storage and out of source control. The first visit establishes a baseline and does not announce older works or order states. Community badges count comments linked to the user's account. New comments store the internal account ID, while the administrator-only Studio comments view resolves that ID to an email address. Older comments without an account ID do not reveal an email.
 
-## 8. Verify
+## 8. Gmail password reset
+
+The sign-in dialog can send a short-lived verification code to the supplied email address. To enable it, secure the Gmail account with two-step verification, create a Google app password, and configure these secrets in the server's environment-variable manager:
+
+- `GMAIL_USER=your-account@gmail.com`
+- `GMAIL_APP_PASSWORD=your-16-character-app-password`
+
+For local development in PowerShell, set both variables in the same terminal before starting the server:
+
+```powershell
+$env:GMAIL_USER = "your-account@gmail.com"
+$env:GMAIL_APP_PASSWORD = "YOUR_GOOGLE_APP_PASSWORD"
+npm.cmd run dev
+```
+
+Never commit the app password or put it in browser code. Restart the server after configuring it. Reset codes expire after 10 minutes, allow at most five verification attempts, and are kept in server memory only. Successful resets invalidate all active sessions for that account. The request response does not reveal whether an email address has an account.
+
+## 9. Verify
 
 After configuring the variables and restarting the server, submit an order and verify it appears in the Supabase `orders` table. Check that the customer account and Studio can read it, update its status, and that remaining weekly capacity updates accordingly.

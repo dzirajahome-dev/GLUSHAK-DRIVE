@@ -7,6 +7,7 @@ const nsfwjs = require("nsfwjs");
 const jpeg = require("jpeg-js");
 const { PNG } = require("pngjs");
 const geoip = require("geoip-lite");
+const nodemailer = require("nodemailer");
 
 const files = {
 	"/": { name: "index.html", type: "text/html; charset=utf-8" },
@@ -48,6 +49,13 @@ const loopbackHosts = ["127.0.0.1", "::1", "localhost"];
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabaseOrdersEnabled = Boolean(supabaseUrl && supabaseServiceRoleKey);
+const gmailUser = process.env.GMAIL_USER || "";
+const gmailAppPassword = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s/g, "");
+const passwordResetCodes = new Map();
+const passwordResetRequests = new Map();
+const passwordResetTransporter = gmailUser && gmailAppPassword
+	? nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailAppPassword } })
+	: null;
 const weeklyOrderLimit = 6;
 const videoPriceGrosze = 2000;
 const maxOrderAttachmentBytes = 100 * 1024 * 1024;
@@ -63,6 +71,8 @@ const dummyPasswordUser = {
 const rateLimitPolicies = [
 	{ matches: (request, pathname) => pathname === "/api/auth/login" && request.method === "POST", maximum: 10, windowMs: 15 * 60 * 1000 },
 	{ matches: (request, pathname) => pathname === "/api/auth/register" && request.method === "POST", maximum: 8, windowMs: 60 * 60 * 1000 },
+	{ matches: (request, pathname) => pathname === "/api/auth/password-reset/request" && request.method === "POST", maximum: 3, windowMs: 15 * 60 * 1000 },
+	{ matches: (request, pathname) => pathname === "/api/auth/password-reset/confirm" && request.method === "POST", maximum: 10, windowMs: 15 * 60 * 1000 },
 	{ matches: (request, pathname) => pathname === "/api/messages" && request.method === "POST", maximum: 10, windowMs: 60 * 1000 },
 	{ matches: (request, pathname) => pathname === "/api/track" && request.method === "POST", maximum: 60, windowMs: 60 * 1000 },
 	{ matches: (request, pathname) => pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method), maximum: 60, windowMs: 60 * 1000 },
@@ -851,7 +861,7 @@ function handleAuthRequest(request, response, pathname) {
 		});
 		return true;
 	}
-	if (!["/api/auth/login", "/api/auth/register", "/api/auth/logout"].includes(pathname)) return false;
+	if (!["/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/password-reset/request", "/api/auth/password-reset/confirm"].includes(pathname)) return false;
 	if (request.method !== "POST") {
 		sendJson(response, 405, { error: "Method not allowed" });
 		return true;
@@ -867,6 +877,100 @@ function handleAuthRequest(request, response, pathname) {
 		}
 		if (!body || typeof body !== "object" || Array.isArray(body)) {
 			sendJson(response, 400, { error: "Nieprawidłowe dane żądania." });
+			return;
+		}
+
+		if (pathname === "/api/auth/password-reset/request") {
+			const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+			if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+				sendJson(response, 400, { error: "Wpisz prawidłowy adres e-mail." });
+				return;
+			}
+			if (!passwordResetTransporter) {
+				sendJson(response, 503, { error: "Reset hasła nie jest skonfigurowany. Administrator musi skonfigurować wysyłkę Gmail." });
+				return;
+			}
+
+			const now = Date.now();
+			for (const [key, requestState] of passwordResetRequests) {
+				if (requestState.resetAt <= now) passwordResetRequests.delete(key);
+			}
+			const emailKey = crypto.createHash("sha256").update(email).digest("hex");
+			const requestState = passwordResetRequests.get(emailKey) || { count: 0, resetAt: now + 15 * 60 * 1000 };
+			if (requestState.count >= 3) {
+				sendJson(response, 429, { error: "Za dużo próśb o reset dla tego adresu. Spróbuj ponownie za 15 minut." });
+				return;
+			}
+			requestState.count += 1;
+			const requestId = crypto.randomUUID();
+			requestState.latestRequestId = requestId;
+			passwordResetRequests.set(emailKey, requestState);
+
+			const accounts = readAccounts();
+			const user = accounts.users.find((item) => item.email === email);
+			const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+			const salt = crypto.randomBytes(16).toString("hex");
+			passwordResetCodes.delete(email);
+			sendJson(response, 202, { message: "Jeśli konto istnieje i wysyłka Gmail działa, kod wkrótce dotrze e-mailem." });
+			if (user) {
+				void passwordResetTransporter.sendMail({
+					from: gmailUser,
+					to: email,
+					subject: "Kod resetowania hasła — GLUSHAK DRIVE",
+					text: `Otrzymaliśmy prośbę o zresetowanie hasła do GLUSHAK DRIVE.\n\nKod weryfikacyjny: ${code}\nKod jest ważny przez 10 minut. Jeśli nie prosiłeś(-aś) o reset, zignoruj tę wiadomość.`,
+				}).then(() => {
+					if (passwordResetRequests.get(emailKey)?.latestRequestId !== requestId) return;
+					passwordResetCodes.set(email, {
+						userId: user.id,
+						salt,
+						codeHash: crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex"),
+						expiresAt: Date.now() + 10 * 60 * 1000,
+						attempts: 0,
+					});
+				}).catch((error) => {
+					console.error("Nie udało się wysłać kodu resetowania hasła przez Gmail.", error);
+				});
+			}
+			return;
+		}
+
+		if (pathname === "/api/auth/password-reset/confirm") {
+			const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+			const code = typeof body.code === "string" ? body.code : "";
+			const password = typeof body.password === "string" ? body.password : "";
+			if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+				|| !/^\d{6}$/.test(code) || password.length < 10 || password.length > 256) {
+				sendJson(response, 400, { error: "Nieprawidłowy kod lub hasło. Hasło musi mieć od 10 do 256 znaków." });
+				return;
+			}
+
+			const reset = passwordResetCodes.get(email);
+			const candidateHash = crypto.createHash("sha256").update(`${reset?.salt || ""}:${code}`).digest();
+			const expectedHash = Buffer.from(reset?.codeHash || "0".repeat(64), "hex");
+			const codeMatches = crypto.timingSafeEqual(candidateHash, expectedHash);
+			if (!reset || reset.expiresAt <= Date.now() || reset.attempts >= 5 || !codeMatches) {
+				if (reset) {
+					reset.attempts += 1;
+					if (reset.attempts >= 5 || reset.expiresAt <= Date.now()) passwordResetCodes.delete(email);
+				}
+				sendJson(response, 400, { error: "Nieprawidłowy lub wygasły kod. Poproś o nowy kod i spróbuj ponownie." });
+				return;
+			}
+
+			const accounts = readAccounts();
+			const user = accounts.users.find((item) => item.id === reset.userId && item.email === email);
+			if (!user) {
+				passwordResetCodes.delete(email);
+				sendJson(response, 400, { error: "Nieprawidłowy lub wygasły kod. Poproś o nowy kod i spróbuj ponownie." });
+				return;
+			}
+			const salt = crypto.randomBytes(16).toString("hex");
+			user.salt = salt;
+			user.passwordHash = hashPassword(password, salt);
+			accounts.sessions = accounts.sessions.filter((session) => session.userId !== user.id);
+			writeAccounts(accounts);
+			passwordResetCodes.delete(email);
+			sendJson(response, 200, { message: "Hasło zostało zmienione. Zaloguj się nowym hasłem." });
 			return;
 		}
 

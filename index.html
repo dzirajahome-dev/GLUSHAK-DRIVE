@@ -613,24 +613,33 @@
 			(() => {
 				const dialog = document.querySelector("#order-help-dialog");
 				const openButton = document.querySelector("#order-help-open");
+				const applyVisibility = (enabled) => {
+					openButton.hidden = enabled !== true;
+					if (openButton.hidden && dialog.open) dialog.close();
+				};
+				const settingsChannel = typeof BroadcastChannel === "function"
+					? new BroadcastChannel("glushak-order-settings")
+					: null;
 				const updateVisibility = async () => {
 					try {
 						const response = await fetch("/api/orders/settings", { cache: "no-store" });
 						if (!response.ok) throw new Error(`Order settings request failed: ${response.status}`);
 						const settings = await response.json();
-						openButton.hidden = settings.enabled !== true;
-						if (openButton.hidden && dialog.open) dialog.close();
+						applyVisibility(settings.enabled);
 					} catch (error) {
 						console.error("Nie udało się sprawdzić dostępności instrukcji zamówienia.", error);
-						openButton.hidden = true;
-						if (dialog.open) dialog.close();
+						applyVisibility(false);
 					}
 				};
+				settingsChannel?.addEventListener("message", (event) => {
+					if (typeof event.data?.enabled === "boolean") applyVisibility(event.data.enabled);
+				});
 				openButton.addEventListener("click", () => dialog.showModal());
 				document.querySelector("#order-help-close").addEventListener("click", () => dialog.close());
 				dialog.addEventListener("click", (event) => {
 					if (event.target === dialog) dialog.close();
 				});
+				window.addEventListener("pagehide", () => settingsChannel?.close(), { once: true });
 				document.addEventListener("visibilitychange", () => {
 					if (!document.hidden) updateVisibility();
 				});
@@ -661,7 +670,28 @@
 				<p class="account-error" id="account-error" role="alert" hidden></p>
 				<button class="account-submit" id="account-submit" type="submit">Zaloguj się</button>
 			</form>
-			<button class="account-switch" id="account-switch" type="button" hidden></button>
+				<button class="account-switch" id="password-reset-open" type="button" hidden data-i18n="password_reset_open">Nie pamiętasz hasła?</button>
+				<button class="account-switch" id="account-switch" type="button" hidden></button>
+		</dialog>
+		<dialog class="account-dialog" id="password-reset-dialog" aria-labelledby="password-reset-title">
+				<div class="dialog-top">
+					<div><p class="dialog-eyebrow" data-i18n="auth_eyebrow">KONTO GLUSHAK DRIVE</p><h2 class="dialog-title" id="password-reset-title" data-i18n="password_reset_title">Reset hasła</h2></div>
+					<button class="dialog-close" id="password-reset-close" type="button" aria-label="Zamknij" data-i18n-aria="close">×</button>
+				</div>
+				<p class="dialog-help" data-i18n="password_reset_help">Wyślemy kod weryfikacyjny na adres e-mail powiązany z kontem.</p>
+				<form class="account-form" id="password-reset-request-form">
+					<label class="account-field" data-i18n-label="email_label">E-mail<input id="password-reset-email" name="email" type="email" autocomplete="email" maxlength="254" required /></label>
+					<p class="account-error" id="password-reset-request-status" role="status" aria-live="polite" hidden></p>
+					<button class="account-submit" id="password-reset-send" type="submit" data-i18n="password_reset_send">Wyślij kod</button>
+				</form>
+				<form class="account-form" id="password-reset-confirm-form" hidden>
+					<label class="account-field" data-i18n-label="password_reset_code_label">Kod z e-maila<input id="password-reset-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required /></label>
+					<label class="account-field" data-i18n-label="password_reset_new_password_label">Nowe hasło<input id="password-reset-password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="256" required /></label>
+					<p class="account-error" id="password-reset-confirm-status" role="status" aria-live="polite" hidden></p>
+					<button class="account-submit" id="password-reset-confirm" type="submit" data-i18n="password_reset_confirm">Zmień hasło</button>
+					<button class="account-switch" id="password-reset-resend" type="button" data-i18n="password_reset_resend">Wyślij kod ponownie</button>
+				</form>
+				<button class="account-switch" id="password-reset-back" type="button" data-i18n="password_reset_back">Wróć do logowania</button>
 		</dialog>
 		<dialog class="account-dialog" id="notifications-dialog" aria-labelledby="notifications-title">
 			<div class="dialog-top">

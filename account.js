@@ -22,6 +22,17 @@
 	const accountPassword = document.querySelector("#account-password");
 	const submitButton = document.querySelector("#account-submit");
 	const modeSwitch = document.querySelector("#account-switch");
+	const resetOpenButton = document.querySelector("#password-reset-open");
+	const resetDialog = document.querySelector("#password-reset-dialog");
+	const resetEmail = document.querySelector("#password-reset-email");
+	const resetRequestForm = document.querySelector("#password-reset-request-form");
+	const resetRequestStatus = document.querySelector("#password-reset-request-status");
+	const resetConfirmForm = document.querySelector("#password-reset-confirm-form");
+	const resetConfirmStatus = document.querySelector("#password-reset-confirm-status");
+	const resetCode = document.querySelector("#password-reset-code");
+	const resetPassword = document.querySelector("#password-reset-password");
+	const resetSendButton = document.querySelector("#password-reset-send");
+	const resetConfirmButton = document.querySelector("#password-reset-confirm");
 	const state = { user: null, setupAvailable: false, mode: "login" };
 	const text = (key) => window.siteText(key);
 
@@ -77,6 +88,7 @@
 			? firstAdmin ? text("auth_submit_admin") : text("auth_submit_register")
 			: text("auth_submit_login");
 		modeSwitch.hidden = state.setupAvailable || Boolean(state.user);
+		resetOpenButton.hidden = isRegister || state.setupAvailable || Boolean(state.user);
 		modeSwitch.textContent = isRegister ? text("auth_switch_login") : text("auth_switch_register");
 		if (!dialog.open) dialog.showModal();
 		if (isRegister) accountName.focus();
@@ -156,6 +168,76 @@
 		if (event.target === dialog) dialog.close();
 	});
 	modeSwitch.addEventListener("click", () => setMode(state.mode === "register" ? "login" : "register"));
+	resetOpenButton.addEventListener("click", () => {
+		resetEmail.value = accountEmail.value.trim();
+		resetRequestStatus.hidden = true;
+		resetRequestStatus.textContent = "";
+		resetConfirmStatus.hidden = true;
+		resetConfirmStatus.textContent = "";
+		resetRequestForm.hidden = false;
+		resetConfirmForm.hidden = true;
+		resetCode.value = "";
+		resetPassword.value = "";
+		dialog.close();
+		resetDialog.showModal();
+		resetEmail.focus();
+	});
+	document.querySelector("#password-reset-close").addEventListener("click", () => resetDialog.close());
+	document.querySelector("#password-reset-back").addEventListener("click", () => {
+		resetDialog.close();
+		setMode("login");
+	});
+	resetDialog.addEventListener("click", (event) => {
+		if (event.target === resetDialog) resetDialog.close();
+	});
+	async function sendPasswordResetCode() {
+		resetSendButton.disabled = true;
+		resetRequestStatus.hidden = true;
+		resetRequestStatus.textContent = "";
+		try {
+			const result = await requestJson("/api/auth/password-reset/request", { email: resetEmail.value.trim() });
+			resetRequestStatus.textContent = text("password_reset_sent");
+			resetRequestStatus.hidden = false;
+			resetRequestForm.hidden = true;
+			resetConfirmForm.hidden = false;
+			resetCode.focus();
+		} catch (error) {
+			resetRequestStatus.textContent = window.siteAuthError(error.message);
+			resetRequestStatus.hidden = false;
+		} finally {
+			resetSendButton.disabled = false;
+		}
+	}
+	resetRequestForm.addEventListener("submit", (event) => {
+		event.preventDefault();
+		void sendPasswordResetCode();
+	});
+	document.querySelector("#password-reset-resend").addEventListener("click", () => {
+		resetRequestForm.hidden = false;
+		void sendPasswordResetCode();
+	});
+	resetConfirmForm.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		resetConfirmButton.disabled = true;
+		resetConfirmStatus.hidden = true;
+		try {
+			await requestJson("/api/auth/password-reset/confirm", {
+				email: resetEmail.value.trim(),
+				code: resetCode.value.trim(),
+				password: resetPassword.value,
+			});
+			resetConfirmStatus.textContent = text("password_reset_success");
+			resetConfirmStatus.hidden = false;
+			resetConfirmForm.hidden = true;
+			resetRequestForm.hidden = true;
+			resetPassword.value = "";
+		} catch (error) {
+			resetConfirmStatus.textContent = window.siteAuthError(error.message);
+			resetConfirmStatus.hidden = false;
+		} finally {
+			resetConfirmButton.disabled = false;
+		}
+	});
 	document.addEventListener("languagechange", () => {
 		renderProfile();
 		if (dialog.open) setMode(state.mode);

@@ -283,6 +283,9 @@
 		<script src="/i18n.js"></script>
 		<script>
 			const text = (key) => window.siteText(key);
+			const orderSettingsChannel = typeof BroadcastChannel === "function"
+				? new BroadcastChannel("glushak-order-settings")
+				: null;
 			const studioTabs = [...document.querySelectorAll(".studio-tab")];
 			const studioViews = [...document.querySelectorAll(".studio-view")];
 			function selectStudioView(viewName, moveFocus = false) {
@@ -586,6 +589,7 @@
 					});
 					if (!response.ok) throw new Error(text("ordering_visibility_save_error"));
 					const settings = await response.json();
+					orderSettingsChannel?.postMessage({ enabled: settings.enabled });
 					feedback.textContent = text(settings.enabled ? "ordering_visibility_on" : "ordering_visibility_off");
 				} catch (error) {
 					if (error instanceof TypeError) console.error("Nie udało się zmienić widoczności zamówień.", error);
@@ -659,6 +663,7 @@
 			loadAdminPanel();
 			loadAdminComments();
 			setInterval(() => { refreshStats(); loadAdminPanel(); loadAdminComments(); }, 15000);
+			window.addEventListener("pagehide", () => orderSettingsChannel?.close(), { once: true });
 		</script>
 	</body>
 </html>
