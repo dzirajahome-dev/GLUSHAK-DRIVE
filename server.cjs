@@ -156,9 +156,12 @@ function enforceRequestRateLimit(request, response, pathname) {
 
 function isSameOriginMutation(request, pathname) {
 	if (!pathname.startsWith("/api/") || ["GET", "HEAD", "OPTIONS"].includes(request.method)) return true;
-	const origin = request.headers.origin;
 	const hostHeader = request.headers.host;
-	if (typeof origin !== "string" || typeof hostHeader !== "string") return false;
+	if (typeof hostHeader !== "string") return false;
+	const origin = request.headers.origin;
+	if (typeof origin !== "string" || origin.length === 0) {
+		return true;
+	}
 	try {
 		const originUrl = new URL(origin);
 		if (!["http:", "https:"].includes(originUrl.protocol)
