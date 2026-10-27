@@ -103,6 +103,10 @@
 			body: body ? JSON.stringify(body) : undefined,
 			cache: "no-store",
 		});
+		const contentType = response.headers.get("content-type") || "";
+		if (!contentType.toLowerCase().includes("application/json")) {
+			throw new Error("Serwer nie zwrócił prawidłowej odpowiedzi API. Sprawdź konfigurację wdrożenia.");
+		}
 		const result = await response.json();
 		if (!response.ok) throw new Error(window.siteAuthError(result.error));
 		return result;

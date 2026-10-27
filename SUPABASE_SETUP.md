@@ -1,6 +1,19 @@
-# Supabase orders setup
+# Supabase setup
 
-The application stores orders in Supabase when both server environment variables are set. The service-role key is only read by Node.js and must never be added to browser code or committed to the project. Without both variables, the server uses the existing local `orders.json` storage.
+The application stores orders and production login accounts in Supabase when both server environment variables are set. The service-role key is only read by server code and must never be added to browser code or committed to the project. The local Node server continues to use `users.json` for local authentication; Vercel uses its serverless auth function and the private Supabase auth tables.
+
+## Production authentication on Vercel
+
+Vercel builds the static site into `dist` and deploys `api/auth/[...path].js` as a Node serverless function. Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as encrypted Vercel environment variables for every environment where the site is deployed. The function uses these variables only on the server. It never trusts a client-supplied role, stores only password hashes and salts, stores only hashed session tokens, sets an HttpOnly/SameSite=Strict/Secure cookie, and applies persistent database-backed request limits.
+
+Before deploying the new auth function:
+
+1. In Supabase SQL Editor, run [`supabase/auth-schema.sql`](./supabase/auth-schema.sql).
+2. From a trusted local environment with access to the existing `users.json`, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` and run `npm run migrate:auth`. This copies account IDs, roles, salts, and password hashes; it does not copy session tokens. Existing accounts keep their roles and users must sign in again.
+3. If this is a new installation with no existing administrator, the first account registered is assigned the administrator role, matching the local server's initial setup behavior.
+4. Deploy the project to Vercel and verify `/api/auth/me` returns JSON. `/api/auth/login` then handles both user and administrator sign-in against the same server-side account store.
+
+Do not expose `SUPABASE_SERVICE_ROLE_KEY` through any `VITE_` variable, frontend file, or browser request. If the auth tables or required Vercel environment variables are unavailable, the endpoint fails closed with a JSON service error. Do not initialize a fresh public auth database while intending to preserve an existing administrator; migrate existing users before enabling the function.
 
 The administrator can pause new orders in Studio under **Orders and payments → Order availability**. The choice is saved in the server's local `order-settings.json` file and is enforced by the order API; existing order history remains available. Keep this file on persistent server storage and out of source control.
 
@@ -10,7 +23,7 @@ The Node server binds to `127.0.0.1` by default. Keep it behind a maintained HTT
 
 Keep `.env` files, `users.json`, `engagement.json`, order/payment settings, uploads, and backups private and outside version control. Use unique administrator passwords, keep server dependencies updated, restrict Studio access to trusted administrators, and maintain tested backups on persistent storage. No application-level measures can guarantee that a publicly exposed service will never be attacked.
 
-## 1. Create the database table
+## 1. Create the orders database tables
 
 1. Create a Supabase project.
 2. Open **SQL Editor** in the Supabase dashboard.

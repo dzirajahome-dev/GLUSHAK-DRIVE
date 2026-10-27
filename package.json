@@ -3,7 +3,8 @@
     "dev": "node server.cjs",
     "build": "vite build",
     "reset:password": "node scripts/reset-password.cjs",
-    "migrate:orders": "node scripts/migrate-orders-to-supabase.cjs"
+    "migrate:orders": "node scripts/migrate-orders-to-supabase.cjs",
+    "migrate:auth": "node scripts/migrate-auth-to-supabase.cjs"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
