@@ -4,6 +4,8 @@
     "build": "vite build",
     "reset:password": "node scripts/reset-password.cjs",
     "migrate:orders": "node scripts/migrate-orders-to-supabase.cjs",
+    "backup:supabase": "node scripts/backup-supabase.cjs",
+    "deploy:auth-schema": "node scripts/deploy-auth-schema.cjs",
     "migrate:auth": "node scripts/migrate-auth-to-supabase.cjs"
   },
   "dependencies": {

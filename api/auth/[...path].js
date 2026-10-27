@@ -1,4 +1,5 @@
 const crypto = require("node:crypto");
+const nodemailer = require("nodemailer");
 
 const sessionCookie = "glushak_session";
 const sessionLifetimeSeconds = 7 * 24 * 60 * 60;
@@ -88,7 +89,13 @@ async function readBody(request) {
 				throw error;
 			}
 		}
-		if (Buffer.byteLength(JSON.stringify(parsed)) > 8192) {
+		const serialized = JSON.stringify(parsed);
+		if (typeof serialized !== "string") {
+			const error = new Error("Nieprawidłowe dane żądania.");
+			error.status = 400;
+			throw error;
+		}
+		if (Buffer.byteLength(serialized) > 8192) {
 			const error = new Error("Żądanie jest za duże.");
 			error.status = 413;
 			throw error;
@@ -144,11 +151,16 @@ async function isRateLimited(config, request, pathname) {
 	const policies = [{ maximum: 60, window: 60 }];
 	if (pathname === "/api/auth/login") policies.push({ maximum: 10, window: 900 });
 	if (pathname === "/api/auth/register") policies.push({ maximum: 8, window: 3600 });
+	if (pathname === "/api/auth/password-reset/request") policies.push({ maximum: 3, window: 900 });
+	if (pathname === "/api/auth/password-reset/confirm") policies.push({ maximum: 10, window: 900 });
 	for (const policy of policies) {
+		const key = crypto.createHash("sha256")
+			.update(`${addressHash}:${pathname}:${policy.window}`)
+			.digest("hex");
 		const result = await supabaseRequest(config, "rpc/consume_site_auth_rate_limit", {
 			method: "POST",
 			body: JSON.stringify({
-				p_key: `${addressHash}:${pathname}:${policy.window}`,
+				p_key: key,
 				p_maximum: policy.maximum,
 				p_window_seconds: policy.window,
 			}),
@@ -181,7 +193,7 @@ async function handle(request, response, pathname) {
 
 	if (pathname === "/api/auth/me" && request.method === "GET") {
 		const admins = await supabaseRequest(config, "site_users?select=id&role=eq.admin&limit=1");
-		const setupAvailable = admins.length === 0;
+		const setupAvailable = admins.length === 0 && process.env.AUTH_ALLOW_FIRST_ADMIN_SETUP === "true";
 		const token = cookieValue(request, sessionCookie);
 		if (!token) {
 			sendJson(response, 200, { user: null, setupAvailable });
@@ -204,7 +216,13 @@ async function handle(request, response, pathname) {
 		return;
 	}
 
-	if (!["/api/auth/login", "/api/auth/register", "/api/auth/logout"].includes(pathname)) {
+	if (![
+		"/api/auth/login",
+		"/api/auth/register",
+		"/api/auth/logout",
+		"/api/auth/password-reset/request",
+		"/api/auth/password-reset/confirm",
+	].includes(pathname)) {
 		sendJson(response, 404, { error: "Nie znaleziono endpointu API." });
 		return;
 	}
@@ -229,6 +247,105 @@ async function handle(request, response, pathname) {
 		}
 		setSessionCookie(response, "", 0);
 		sendJson(response, 200, { ok: true });
+		return;
+	}
+
+	if (pathname === "/api/auth/password-reset/request") {
+		const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+			sendJson(response, 400, { error: "Wpisz prawidłowy adres e-mail." });
+			return;
+		}
+		const gmailUser = process.env.GMAIL_USER || "";
+		const gmailAppPassword = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s/g, "");
+		if (!gmailUser || !gmailAppPassword) {
+			sendJson(response, 503, { error: "Reset hasła nie jest skonfigurowany. Administrator musi skonfigurować wysyłkę Gmail." });
+			return;
+		}
+		const emailHash = crypto.createHash("sha256").update(email).digest("hex");
+		if (await isRateLimited(config, request, `/api/auth/password-reset/request:${emailHash}`)) {
+			sendJson(response, 429, { error: "Za dużo próśb o reset dla tego adresu. Spróbuj ponownie za 15 minut." });
+			return;
+		}
+		const users = await supabaseRequest(
+			config,
+			`site_users?select=id,email&email=eq.${encodeURIComponent(email)}&limit=1`,
+		);
+		if (users.length) {
+			const salt = crypto.randomBytes(16).toString("hex");
+			const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+			const requestCode = {
+				email,
+				user_id: users[0].id,
+				salt,
+				code_hash: crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex"),
+				expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+				attempts: 0,
+			};
+			await supabaseRequest(
+				config,
+				"site_password_reset_codes?on_conflict=email",
+				{
+					method: "POST",
+					headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+					body: JSON.stringify(requestCode),
+				},
+			);
+			try {
+				const transporter = nodemailer.createTransport({
+					service: "gmail",
+					auth: { user: gmailUser, pass: gmailAppPassword },
+				});
+				await transporter.sendMail({
+					from: gmailUser,
+					to: email,
+					subject: "Kod resetowania hasła — GLUSHAK DRIVE",
+					text: `Otrzymaliśmy prośbę o zresetowanie hasła do GLUSHAK DRIVE.\n\nKod weryfikacyjny: ${code}\nKod jest ważny przez 10 minut. Jeśli nie prosiłeś(-aś) o reset, zignoruj tę wiadomość.`,
+				});
+			} catch (error) {
+				await supabaseRequest(
+					config,
+					`site_password_reset_codes?email=eq.${encodeURIComponent(email)}`,
+					{ method: "DELETE" },
+				);
+				throw error;
+			}
+		}
+		sendJson(response, 202, { message: "Jeśli konto istnieje i wysyłka Gmail działa, kod wkrótce dotrze e-mailem." });
+		return;
+	}
+
+	if (pathname === "/api/auth/password-reset/confirm") {
+		const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+		const code = typeof body.code === "string" ? body.code : "";
+		const password = typeof body.password === "string" ? body.password : "";
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254
+			|| !/^\d{6}$/.test(code) || password.length < 10 || password.length > 256) {
+			sendJson(response, 400, { error: "Nieprawidłowy kod lub hasło. Hasło musi mieć od 10 do 256 znaków." });
+			return;
+		}
+		const resetCodes = await supabaseRequest(
+			config,
+			`site_password_reset_codes?select=salt&email=eq.${encodeURIComponent(email)}&limit=1`,
+		);
+		const salt = resetCodes[0]?.salt || "";
+		const codeHash = crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex");
+		const newSalt = crypto.randomBytes(16).toString("hex");
+		const resetResult = await supabaseRequest(config, "rpc/consume_site_password_reset", {
+			method: "POST",
+			body: JSON.stringify({
+				p_email: email,
+				p_salt: salt,
+				p_code_hash: codeHash,
+				p_new_salt: newSalt,
+				p_new_password_hash: crypto.scryptSync(password, newSalt, 64).toString("hex"),
+			}),
+		});
+		if (resetResult !== true) {
+			sendJson(response, 400, { error: "Nieprawidłowy lub wygasły kod. Poproś o nowy kod i spróbuj ponownie." });
+			return;
+		}
+		sendJson(response, 200, { message: "Hasło zostało zmienione. Zaloguj się nowym hasłem." });
 		return;
 	}
 
@@ -267,6 +384,12 @@ async function handle(request, response, pathname) {
 		|| !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254
 		|| password.length < 10 || password.length > 256) {
 		sendJson(response, 400, { error: "Wpisz nazwę, prawidłowy e-mail i hasło (co najmniej 10 znaków)." });
+		return;
+	}
+	const admins = await supabaseRequest(config, "site_users?select=id&role=eq.admin&limit=1");
+	const setupAvailable = admins.length === 0 && process.env.AUTH_ALLOW_FIRST_ADMIN_SETUP === "true";
+	if (admins.length === 0 && !setupAvailable) {
+		sendJson(response, 503, { error: "Rejestracja pierwszego administratora wymaga kontrolowanego uruchomienia przez administratora." });
 		return;
 	}
 	const salt = crypto.randomBytes(16).toString("hex");

@@ -17,6 +17,17 @@ create table if not exists public.site_sessions (
 create index if not exists site_sessions_user_id_idx on public.site_sessions(user_id);
 create index if not exists site_sessions_expires_at_idx on public.site_sessions(expires_at);
 
+create table if not exists public.site_password_reset_codes (
+	email text primary key,
+	user_id uuid not null references public.site_users(id) on delete cascade,
+	salt text not null check (salt ~ '^[0-9a-f]{32}$'),
+	code_hash text not null check (code_hash ~ '^[0-9a-f]{64}$'),
+	expires_at timestamptz not null,
+	attempts integer not null default 0 check (attempts between 0 and 5)
+);
+
+create index if not exists site_password_reset_codes_expiry_idx on public.site_password_reset_codes(expires_at);
+
 create table if not exists public.site_auth_rate_limits (
 	key text primary key,
 	window_started_at timestamptz not null,
@@ -27,10 +38,11 @@ create index if not exists site_auth_rate_limits_window_idx on public.site_auth_
 
 alter table public.site_users enable row level security;
 alter table public.site_sessions enable row level security;
+alter table public.site_password_reset_codes enable row level security;
 alter table public.site_auth_rate_limits enable row level security;
 
-revoke all on table public.site_users, public.site_sessions, public.site_auth_rate_limits from public, anon, authenticated;
-grant all on table public.site_users, public.site_sessions, public.site_auth_rate_limits to service_role;
+revoke all on table public.site_users, public.site_sessions, public.site_password_reset_codes, public.site_auth_rate_limits from public, anon, authenticated;
+grant all on table public.site_users, public.site_sessions, public.site_password_reset_codes, public.site_auth_rate_limits to service_role;
 
 create or replace function public.consume_site_auth_rate_limit(
 	p_key text,
@@ -48,6 +60,9 @@ begin
 	if p_maximum < 1 or p_window_seconds < 1 or char_length(p_key) > 160 then
 		return false;
 	end if;
+
+	delete from public.site_auth_rate_limits
+	where window_started_at < clock_timestamp() - interval '24 hours';
 
 	insert into public.site_auth_rate_limits (key, window_started_at, request_count)
 	values (p_key, clock_timestamp(), 1)
@@ -107,7 +122,56 @@ begin
 end;
 $$;
 
+create or replace function public.consume_site_password_reset(
+	p_email text,
+	p_salt text,
+	p_code_hash text,
+	p_new_salt text,
+	p_new_password_hash text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+	v_reset public.site_password_reset_codes%rowtype;
+begin
+	select * into v_reset
+	from public.site_password_reset_codes
+	where email = lower(btrim(p_email))
+	for update;
+
+	if not found or v_reset.expires_at <= now() or v_reset.attempts >= 5 then
+		delete from public.site_password_reset_codes where email = lower(btrim(p_email));
+		return false;
+	end if;
+
+	if v_reset.salt <> p_salt or v_reset.code_hash <> p_code_hash then
+		update public.site_password_reset_codes
+		set attempts = attempts + 1
+		where email = v_reset.email;
+		return false;
+	end if;
+
+	update public.site_users
+	set password_salt = p_new_salt,
+		password_hash = p_new_password_hash
+	where id = v_reset.user_id;
+	if not found then
+		delete from public.site_password_reset_codes where email = v_reset.email;
+		return false;
+	end if;
+
+	delete from public.site_sessions where user_id = v_reset.user_id;
+	delete from public.site_password_reset_codes where email = v_reset.email;
+	return true;
+end;
+$$;
+
 revoke all on function public.consume_site_auth_rate_limit(text, integer, integer) from public, anon, authenticated;
 revoke all on function public.create_site_user(uuid, text, text, text, text) from public, anon, authenticated;
+revoke all on function public.consume_site_password_reset(text, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.consume_site_auth_rate_limit(text, integer, integer) to service_role;
 grant execute on function public.create_site_user(uuid, text, text, text, text) to service_role;
+grant execute on function public.consume_site_password_reset(text, text, text, text, text) to service_role;
