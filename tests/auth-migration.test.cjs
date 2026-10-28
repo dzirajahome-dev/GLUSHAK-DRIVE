@@ -74,11 +74,11 @@ function runMigration(name, users, rows = [], adminIdOverride = adminId, sourceC
 	const backupPath = path.join(fixtureRoot, `${name}-synthetic-backup.dump`);
 	const backupContents = "synthetic fixture only; not a database backup";
 	fs.writeFileSync(backupPath, backupContents);
-	fs.writeFileSync(`${backupPath}.metadata.json`, JSON.stringify({
+	fs.writeFileSync(`${backupPath}.metadata.json`, `\uFEFF${JSON.stringify({
 		projectRef: "unit-test-project",
 		size: Buffer.byteLength(backupContents),
 		sha256: crypto.createHash("sha256").update(backupContents).digest("hex"),
-	}));
+	})}`);
 	fs.writeFileSync(mockStateFile, JSON.stringify({ rows, writeRequests: 0 }));
 
 	const env = {

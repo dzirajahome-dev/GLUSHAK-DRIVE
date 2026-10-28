@@ -20,9 +20,11 @@ function getVerifiedBackup(projectRef) {
 	if (backupFile.toLowerCase().startsWith(`${workspace}${path.sep}`.toLowerCase())) {
 		throw new Error("The verified database backup must be stored outside the repository.");
 	}
-	const metadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+	const metadataContents = fs.readFileSync(metadataPath, "utf8").replace(/^\uFEFF/, "");
+	const metadata = JSON.parse(metadataContents);
 	const stats = fs.statSync(backupFile);
-	if (metadata.projectRef !== projectRef || metadata.size !== stats.size || stats.size === 0) {
+	if (metadata.projectRef !== projectRef || metadata.size !== stats.size || stats.size === 0
+		|| !/^[a-f0-9]{64}$/i.test(metadata.sha256 || "")) {
 		throw new Error("The backup does not match the selected Supabase project.");
 	}
 	return { backupFile, expectedHash: metadata.sha256 };

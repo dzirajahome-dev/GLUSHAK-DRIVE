@@ -28,6 +28,8 @@ function cookieValue(request, name) {
 function isSameOrigin(request) {
 	const host = request.headers.host;
 	if (typeof host !== "string") return false;
+	const fetchSite = request.headers["sec-fetch-site"];
+	if (fetchSite !== undefined && fetchSite !== "same-origin") return false;
 	const origin = request.headers.origin;
 	if (typeof origin !== "string" || origin.length === 0) return true;
 	try {
@@ -38,8 +40,7 @@ function isSameOrigin(request) {
 	} catch {
 		return false;
 	}
-	const fetchSite = request.headers["sec-fetch-site"];
-	return fetchSite === undefined || fetchSite === "same-origin";
+	return true;
 }
 
 function getSupabaseConfig() {

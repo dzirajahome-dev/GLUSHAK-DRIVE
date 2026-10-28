@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
+const nodemailer = require("nodemailer");
 const test = require("node:test");
 
 const root = path.resolve(__dirname, "..");
@@ -9,6 +10,9 @@ const handler = require("../api/auth/[...path].js");
 const originalFetch = global.fetch;
 const originalSupabaseUrl = process.env.SUPABASE_URL;
 const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const originalGmailUser = process.env.GMAIL_USER;
+const originalGmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+const originalCreateTransport = nodemailer.createTransport;
 const middlewarePromise = import("../middleware.js");
 
 function response(status, value) {
@@ -41,6 +45,11 @@ test.after(() => {
 	else process.env.SUPABASE_URL = originalSupabaseUrl;
 	if (originalServiceRoleKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 	else process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+	if (originalGmailUser === undefined) delete process.env.GMAIL_USER;
+	else process.env.GMAIL_USER = originalGmailUser;
+	if (originalGmailAppPassword === undefined) delete process.env.GMAIL_APP_PASSWORD;
+	else process.env.GMAIL_APP_PASSWORD = originalGmailAppPassword;
+	nodemailer.createTransport = originalCreateTransport;
 });
 
 test("public registration creates a regular user even when no administrator exists", async () => {
@@ -146,6 +155,19 @@ test("logout deletes only the current hashed session", async () => {
 	assert.match(result.headers["set-cookie"], /Max-Age=0/);
 });
 
+test("rejects cross-site mutations when the Origin header is absent", async () => {
+	process.env.SUPABASE_URL = "https://unit-test.supabase.co";
+	process.env.SUPABASE_SERVICE_ROLE_KEY = "test-only-key";
+	let supabaseCalled = false;
+	const result = await invoke("/api/auth/logout", {}, async () => {
+		supabaseCalled = true;
+		throw new Error("Cross-site request reached Supabase.");
+	}, { "sec-fetch-site": "cross-site" });
+
+	assert.equal(result.status, 403);
+	assert.equal(supabaseCalled, false);
+});
+
 test("an existing administrator can still sign in with administrator permissions", async () => {
 	process.env.SUPABASE_URL = "https://unit-test.supabase.co";
 	process.env.SUPABASE_SERVICE_ROLE_KEY = "test-only-key";
@@ -228,6 +250,53 @@ test("password reset hashes codes with the server-only key", async () => {
 	assert.equal(result.status, 200);
 });
 
+test("password reset requests use non-enumerating responses and email codes only for existing accounts", async () => {
+	process.env.SUPABASE_URL = "https://unit-test.supabase.co";
+	process.env.SUPABASE_SERVICE_ROLE_KEY = "test-only-key";
+	process.env.GMAIL_USER = "mailer@example.test";
+	process.env.GMAIL_APP_PASSWORD = "synthetic-app-password";
+	const sentMessages = [];
+	const storedCodes = [];
+	nodemailer.createTransport = () => ({
+		sendMail: async (message) => { sentMessages.push(message); },
+	});
+
+	try {
+		const existing = await invoke("/api/auth/password-reset/request", {
+			email: "user@example.test",
+		}, async (url, options) => {
+			if (String(url).includes("consume_site_auth_rate_limit")) return response(200, true);
+			if (String(url).includes("site_users?")) return response(200, [{
+				id: "33333333-3333-4333-8333-333333333333",
+				email: "user@example.test",
+			}]);
+			if (String(url).includes("site_password_reset_codes") && options.method === "POST") {
+				storedCodes.push(JSON.parse(options.body));
+				return response(201, null);
+			}
+			throw new Error("Unexpected mocked Supabase request.");
+		});
+
+		const unknown = await invoke("/api/auth/password-reset/request", {
+			email: "missing@example.test",
+		}, async (url) => {
+			if (String(url).includes("consume_site_auth_rate_limit")) return response(200, true);
+			if (String(url).includes("site_users?")) return response(200, []);
+			throw new Error("Unexpected mocked Supabase request.");
+		});
+
+		assert.equal(existing.status, 202);
+		assert.deepEqual(existing.body, unknown.body);
+		assert.equal(sentMessages.length, 1);
+		assert.equal(storedCodes.length, 1);
+		assert.match(storedCodes[0].code_hash, /^[a-f0-9]{64}$/);
+		assert.doesNotMatch(JSON.stringify(existing.body), /\b\d{6}\b/);
+		assert.match(sentMessages[0].text, /\b\d{6}\b/);
+	} finally {
+		nodemailer.createTransport = originalCreateTransport;
+	}
+});
+
 test("SQL and local registration cannot assign admin through public registration", () => {
 	const schema = fs.readFileSync(path.join(root, "supabase", "auth-schema.sql"), "utf8");
 	const server = fs.readFileSync(path.join(root, "server.cjs"), "utf8");
@@ -240,6 +309,8 @@ test("SQL and local registration cannot assign admin through public registration
 	assert.doesNotMatch(schema, /when\s+not\s+exists\s*\(select\s+1\s+from\s+public\.site_users\s+where\s+role\s*=\s*'admin'\)/i);
 	assert.match(schema, /revoke all on function public\.promote_site_user_to_admin\(text\) from public, anon, authenticated/i);
 	assert.match(schema, /grant execute on function public\.promote_site_user_to_admin\(text\) to service_role/i);
+	assert.match(server, /if \(fetchSite !== undefined && fetchSite !== "same-origin"\) return false;/);
+	assert.match(api, /if \(fetchSite !== undefined && fetchSite !== "same-origin"\) return false;/);
 });
 
 test("the Studio middleware allows only sessions whose server-side account role is admin", async () => {

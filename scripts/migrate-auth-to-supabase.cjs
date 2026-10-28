@@ -36,7 +36,8 @@ if (!path.isAbsolute(backupFile) || backupFile.toLowerCase().startsWith(`${works
 }
 const backupMetadataFile = `${backupFile}.metadata.json`;
 if (!fs.existsSync(backupMetadataFile)) throw new Error("The database backup metadata file is missing.");
-const backupMetadata = JSON.parse(fs.readFileSync(backupMetadataFile, "utf8"));
+const backupMetadataContents = fs.readFileSync(backupMetadataFile, "utf8").replace(/^\uFEFF/, "");
+const backupMetadata = JSON.parse(backupMetadataContents);
 if (backupMetadata.projectRef !== projectRef || backupMetadata.size !== fs.statSync(backupFile).size
 	|| !/^[a-f0-9]{64}$/i.test(backupMetadata.sha256 || "")) {
 	throw new Error("The verified backup does not match the selected Supabase project.");

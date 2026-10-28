@@ -162,6 +162,8 @@ function isSameOriginMutation(request, pathname) {
 	if (!pathname.startsWith("/api/") || ["GET", "HEAD", "OPTIONS"].includes(request.method)) return true;
 	const hostHeader = request.headers.host;
 	if (typeof hostHeader !== "string") return false;
+	const fetchSite = request.headers["sec-fetch-site"];
+	if (fetchSite !== undefined && fetchSite !== "same-origin") return false;
 	const origin = request.headers.origin;
 	if (typeof origin !== "string" || origin.length === 0) {
 		return true;
@@ -174,8 +176,7 @@ function isSameOriginMutation(request, pathname) {
 	} catch {
 		return false;
 	}
-	const fetchSite = request.headers["sec-fetch-site"];
-	return fetchSite === undefined || fetchSite === "same-origin";
+	return true;
 }
 
 function sendJson(response, status, value) {
