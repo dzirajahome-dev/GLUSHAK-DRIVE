@@ -31,7 +31,7 @@ global.fetch = async (input, options = {}) => {
 	const email = url.searchParams.get("email");
 	let rows = state.rows;
 	if (id) rows = rows.filter((row) => row.id === id.replace(/^eq\\./, ""));
-	if (email) rows = rows.filter((row) => row.email === email.replace(/^eq\\./, ""));
+	if (email) rows = rows.filter((row) => row.email.toLowerCase() === email.replace(/^ilike\\./, "").toLowerCase());
 	return new Response(JSON.stringify(rows), {
 		status: 200,
 		headers: { "Content-Type": "application/json" },
@@ -65,7 +65,7 @@ function makeDatabaseRow(user, changes = {}) {
 	};
 }
 
-function runMigration(name, users, rows = [], adminIdOverride = adminId, sourceConfirmed = true) {
+function runMigration(name, users, rows = [], adminIdOverride = adminId, sourceConfirmed = true, mode = "--apply", projectRef = "idhbthrrgcdgogjhosjw") {
 	const scenarioPath = path.join(fixtureRoot, name);
 	fs.mkdirSync(path.join(scenarioPath, "scripts"), { recursive: true });
 	fs.copyFileSync(sourceScript, path.join(scenarioPath, "scripts", "migrate-auth-to-supabase.cjs"));
@@ -75,7 +75,7 @@ function runMigration(name, users, rows = [], adminIdOverride = adminId, sourceC
 	const backupContents = "synthetic fixture only; not a database backup";
 	fs.writeFileSync(backupPath, backupContents);
 	fs.writeFileSync(`${backupPath}.metadata.json`, `\uFEFF${JSON.stringify({
-		projectRef: "unit-test-project",
+		projectRef,
 		size: Buffer.byteLength(backupContents),
 		sha256: crypto.createHash("sha256").update(backupContents).digest("hex"),
 	})}`);
@@ -83,9 +83,9 @@ function runMigration(name, users, rows = [], adminIdOverride = adminId, sourceC
 
 	const env = {
 		...process.env,
-		SUPABASE_URL: "https://unit-test-project.supabase.co",
+		SUPABASE_URL: `https://${projectRef}.supabase.co`,
 		SUPABASE_SERVICE_ROLE_KEY: "synthetic-test-key",
-		SUPABASE_CONFIRM_PROJECT_REF: "unit-test-project",
+		SUPABASE_CONFIRM_PROJECT_REF: projectRef,
 		SUPABASE_BACKUP_CONFIRMED: "YES",
 		SUPABASE_AUTH_SOURCE_CONFIRMED: sourceConfirmed ? "YES" : "",
 		SUPABASE_AUTH_ADMIN_ID: adminIdOverride || "",
@@ -96,6 +96,7 @@ function runMigration(name, users, rows = [], adminIdOverride = adminId, sourceC
 		"--require",
 		fetchMockFile,
 		path.join(scenarioPath, "scripts", "migrate-auth-to-supabase.cjs"),
+		mode,
 	], { env, encoding: "utf8" });
 	return {
 		result,
@@ -107,15 +108,17 @@ test.after(() => {
 	fs.rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
-test("migrates the explicitly identified existing admin and regular user, preserving credentials", () => {
+test("migrates only the explicitly identified existing admin, preserving original credentials", () => {
 	const admin = makeUser(adminId, "Synthetic Admin", "admin@example.test", "admin", "a", "1");
 	const user = makeUser("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "Synthetic User", "user@example.test", "user", "b", "2");
 	const { result, state } = runMigration("success", [admin, user]);
 
 	assert.equal(result.status, 0, result.stderr);
-	assert.equal(state.rows.length, 2);
+	assert.equal(state.rows.length, 1);
 	assert.equal(state.writeRequests, 1);
 	const migratedAdmin = state.rows.find((row) => row.id === admin.id);
+	assert.equal(migratedAdmin.name, admin.name);
+	assert.equal(migratedAdmin.email, admin.email);
 	assert.equal(migratedAdmin.role, "admin");
 	assert.equal(migratedAdmin.password_salt, admin.salt);
 	assert.equal(migratedAdmin.password_hash, admin.passwordHash);
@@ -123,7 +126,19 @@ test("migrates the explicitly identified existing admin and regular user, preser
 		crypto.scryptSync("synthetic-1-password", migratedAdmin.password_salt, 64).toString("hex"),
 		migratedAdmin.password_hash,
 	);
-	assert.equal(state.rows.find((row) => row.id === user.id).role, "user");
+	assert.equal(state.rows.some((row) => row.id === user.id), false);
+	assert.doesNotMatch(result.stdout + result.stderr, /admin@example\.test|password|salt|hash/i);
+});
+
+test("dry run performs conflict checks but never writes", () => {
+	const admin = makeUser(adminId, "Synthetic Admin", "admin@example.test", "admin", "a", "1");
+	const { result, state } = runMigration("dry-run", [admin], [], adminId, true, "--dry-run");
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(state.rows.length, 0);
+	assert.equal(state.writeRequests, 0);
+	assert.match(result.stdout, /Dry run passed/);
+	assert.doesNotMatch(result.stdout + result.stderr, /admin@example\.test|password|salt|hash/i);
 });
 
 test("refuses to migrate when the expected admin identity is missing or does not match", () => {
@@ -141,22 +156,39 @@ test("refuses to migrate when the expected admin identity is missing or does not
 	assert.notEqual(wrongId.result.status, 0);
 	assert.equal(wrongId.state.writeRequests, 0);
 
+	const noAdmin = runMigration("no-admin", [makeUser(
+		"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+		"Synthetic User",
+		"user@example.test",
+		"user",
+		"b",
+		"2",
+	)]);
+	assert.notEqual(noAdmin.result.status, 0);
+	assert.equal(noAdmin.state.writeRequests, 0);
+
 	const extraAdmin = makeUser("cccccccc-cccc-4ccc-8ccc-cccccccccccc", "Another Admin", "other@example.test", "admin", "c", "3");
 	const ambiguous = runMigration("multiple-admins", [admin, extraAdmin]);
 	assert.notEqual(ambiguous.result.status, 0);
 	assert.equal(ambiguous.state.writeRequests, 0);
 });
 
-test("is a no-op on rerun when an existing account has matching identity, role, and credentials", () => {
+test("refuses to contact a different Supabase project", () => {
 	const admin = makeUser(adminId, "Synthetic Admin", "admin@example.test", "admin", "a", "1");
-	const user = makeUser("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "Synthetic User", "user@example.test", "user", "b", "2");
-	const { result, state } = runMigration("repeat", [admin, user], [
+	const mismatch = runMigration("wrong-project", [admin], [], adminId, true, "--dry-run", "other-project");
+	assert.notEqual(mismatch.result.status, 0);
+	assert.equal(mismatch.state.writeRequests, 0);
+	assert.match(mismatch.result.stderr, /approved Supabase project/);
+});
+
+test("is a no-op on rerun when the existing admin matches every preserved field", () => {
+	const admin = makeUser(adminId, "Synthetic Admin", "admin@example.test", "admin", "a", "1");
+	const { result, state } = runMigration("repeat", [admin], [
 		makeDatabaseRow(admin),
-		makeDatabaseRow(user),
 	]);
 
 	assert.equal(result.status, 0, result.stderr);
-	assert.equal(state.rows.length, 2);
+	assert.equal(state.rows.length, 1);
 	assert.equal(state.writeRequests, 0);
 });
 
@@ -175,8 +207,15 @@ test("aborts before writes on ID, email, role, or credential conflicts", () => {
 	assert.equal(emailConflict.state.writeRequests, 0);
 	assert.equal(emailConflict.state.rows[0].role, "user");
 
+	const caseInsensitiveEmailConflict = runMigration("case-insensitive-email-conflict", [admin], [
+		makeDatabaseRow(sameEmailOtherId, { email: "ADMIN@example.test" }),
+	]);
+	assert.notEqual(caseInsensitiveEmailConflict.result.status, 0);
+	assert.equal(caseInsensitiveEmailConflict.state.writeRequests, 0);
+
 	for (const [name, changes] of [
 		["role-conflict", { role: "user" }],
+		["name-conflict", { name: "Different Name" }],
 		["hash-conflict", { password_hash: "f".repeat(128) }],
 		["salt-conflict", { password_salt: "e".repeat(32) }],
 		["email-id-conflict", { email: "other@example.test" }],

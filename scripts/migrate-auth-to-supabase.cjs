@@ -5,24 +5,38 @@ const crypto = require("node:crypto");
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const expectedAdminId = (process.env.SUPABASE_AUTH_ADMIN_ID || "").toLowerCase();
+const expectedProjectRef = "idhbthrrgcdgogjhosjw";
+const args = process.argv.slice(2);
+const allowedArgs = new Set(["--dry-run", "--apply"]);
+const dryRun = args.includes("--dry-run");
+const apply = args.includes("--apply");
 const accountsFile = path.join(__dirname, "..", "users.json");
 const workspace = path.resolve(__dirname, "..");
 
+if (args.some((arg) => !allowedArgs.has(arg)) || (dryRun && apply) || args.length > 1) {
+	throw new Error("Choose exactly one supported mode: --dry-run or --apply.");
+}
+if (!args.length) {
+	throw new Error("Choose --dry-run to inspect migration or --apply to write the administrator account.");
+}
 if (!supabaseUrl || !serviceRoleKey) {
-	throw new Error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before migrating accounts.");
+	throw new Error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before checking the administrator migration.");
 }
 if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl)) {
 	throw new Error("SUPABASE_URL must be an HTTPS Supabase project URL.");
 }
 const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+if (projectRef !== expectedProjectRef) {
+	throw new Error("SUPABASE_URL does not match the approved Supabase project.");
+}
 if (process.env.SUPABASE_CONFIRM_PROJECT_REF !== projectRef) {
-	throw new Error("Set SUPABASE_CONFIRM_PROJECT_REF to the exact project ref in SUPABASE_URL before migrating.");
+	throw new Error("Set SUPABASE_CONFIRM_PROJECT_REF to the approved project ref before checking the migration.");
 }
 if (process.env.SUPABASE_BACKUP_CONFIRMED !== "YES") {
-	throw new Error("Migration is paused. Set SUPABASE_BACKUP_CONFIRMED=YES only after verifying the backup and selected project.");
+	throw new Error("Migration is paused. Confirm the backup and selected project before continuing.");
 }
 if (process.env.SUPABASE_AUTH_SOURCE_CONFIRMED !== "YES") {
-	throw new Error("Migration is paused. Confirm that users.json is the authoritative account source before migrating.");
+	throw new Error("Migration is paused. Confirm users.json as the authoritative account source before continuing.");
 }
 if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(expectedAdminId)) {
 	throw new Error("Set SUPABASE_AUTH_ADMIN_ID to the privately verified ID of the existing administrator.");
@@ -51,20 +65,22 @@ function loadUsers() {
 
 function toDatabaseUser(user) {
 	if (!user || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user.id || "")
-		|| typeof user.name !== "string" || user.name.trim().length < 2 || user.name.trim().length > 50
-		|| typeof user.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
-		|| !["user", "admin"].includes(user.role)
-		|| !/^[a-f0-9]{32}$/i.test(user.salt || "")
-		|| !/^[a-f0-9]{128}$/i.test(user.passwordHash || "")) {
+		|| typeof user.name !== "string" || user.name !== user.name.trim()
+		|| user.name.length < 2 || user.name.length > 50
+		|| typeof user.email !== "string" || user.email.length > 254
+		|| user.email !== user.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
+		|| user.role !== "admin"
+		|| !/^[a-f0-9]{32}$/.test(user.salt || "")
+		|| !/^[a-f0-9]{128}$/.test(user.passwordHash || "")) {
 		throw new Error("users.json contains an invalid account record.");
 	}
 	return {
 		id: user.id,
-		name: user.name.trim(),
-		email: user.email.trim().toLowerCase(),
+		name: user.name,
+		email: user.email,
 		role: user.role,
-		password_salt: user.salt.toLowerCase(),
-		password_hash: user.passwordHash.toLowerCase(),
+		password_salt: user.salt,
+		password_hash: user.passwordHash,
 		created_at: user.createdAt && !Number.isNaN(Date.parse(user.createdAt))
 			? new Date(user.createdAt).toISOString()
 			: new Date().toISOString(),
@@ -77,65 +93,67 @@ async function migrate() {
 	if (hash.digest("hex") !== backupMetadata.sha256) {
 		throw new Error("The database backup changed after verification; account migration is blocked.");
 	}
-	const users = loadUsers().map(toDatabaseUser);
-	const admins = users.filter((user) => user.role === "admin");
-	if (admins.length !== 1 || admins[0].id.toLowerCase() !== expectedAdminId) {
-		throw new Error("The source must contain exactly one administrator matching SUPABASE_AUTH_ADMIN_ID; no accounts were migrated.");
+	const sourceUsers = loadUsers();
+	const admins = sourceUsers.filter((user) => user && user.role === "admin");
+	if (admins.length !== 1) {
+		throw new Error("The source must contain exactly one administrator matching SUPABASE_AUTH_ADMIN_ID; no data was written.");
 	}
-	if (new Set(users.map((user) => user.id.toLowerCase())).size !== users.length
-		|| new Set(users.map((user) => user.email)).size !== users.length) {
-		throw new Error("The account source contains duplicate IDs or emails; no accounts were migrated.");
+	const admin = toDatabaseUser(admins[0]);
+	if (admin.id.toLowerCase() !== expectedAdminId) {
+		throw new Error("The source must contain exactly one administrator matching SUPABASE_AUTH_ADMIN_ID; no data was written.");
 	}
-	if (!users.length) {
-		console.log("No accounts found in users.json; nothing to migrate.");
+	const requestHeaders = {
+		apikey: serviceRoleKey,
+		Authorization: `Bearer ${serviceRoleKey}`,
+	};
+	const existingById = await fetch(
+			`${supabaseUrl}/rest/v1/site_users?select=id,name,email,role,password_salt,password_hash&id=eq.${encodeURIComponent(admin.id)}&limit=1`,
+			{ headers: requestHeaders },
+		);
+	if (!existingById.ok) throw new Error(`Could not check the administrator ID (HTTP ${existingById.status}).`);
+	const idMatches = await existingById.json();
+	if (idMatches.length) {
+		const existing = idMatches[0];
+		if (existing.name !== admin.name || existing.email !== admin.email || existing.role !== admin.role
+			|| existing.password_salt !== admin.password_salt || existing.password_hash !== admin.password_hash) {
+			throw new Error("The administrator ID already exists with conflicting data. No data was written.");
+		}
+		console.log("The matching administrator already exists; no data was written.");
 		return;
 	}
-	const pendingUsers = [];
-	for (const user of users) {
-		const existingById = await fetch(
-			`${supabaseUrl}/rest/v1/site_users?select=id,email,role,password_salt,password_hash&id=eq.${encodeURIComponent(user.id)}&limit=1`,
-			{ headers: { apikey: serviceRoleKey, Authorization: `******` } },
-		);
-		if (!existingById.ok) throw new Error(`Could not check existing accounts (HTTP ${existingById.status}).`);
-		const idMatches = await existingById.json();
-		if (idMatches.length) {
-			const existing = idMatches[0];
-			if (existing.email !== user.email || existing.role !== user.role
-				|| existing.password_salt !== user.password_salt || existing.password_hash !== user.password_hash) {
-				throw new Error("An existing account has conflicting identity, role, or credentials. No accounts were migrated.");
-			}
-			continue;
-		}
-		const existingByEmail = await fetch(
-			`${supabaseUrl}/rest/v1/site_users?select=id,email,role&email=eq.${encodeURIComponent(user.email)}&limit=1`,
-			{ headers: { apikey: serviceRoleKey, Authorization: `******` } },
-		);
-		if (!existingByEmail.ok) throw new Error(`Could not check existing account emails (HTTP ${existingByEmail.status}).`);
-		const emailMatches = await existingByEmail.json();
-		if (emailMatches.length) {
-			throw new Error("An existing account uses an email assigned to a different ID. No accounts were migrated.");
-		}
-		pendingUsers.push(user);
+
+	const existingByEmail = await fetch(
+		`${supabaseUrl}/rest/v1/site_users?select=id,email&email=ilike.${encodeURIComponent(admin.email)}&limit=1`,
+		{ headers: requestHeaders },
+	);
+	if (!existingByEmail.ok) throw new Error(`Could not check the administrator email (HTTP ${existingByEmail.status}).`);
+	const emailMatches = await existingByEmail.json();
+	if (emailMatches.length) {
+		throw new Error("The administrator email is already assigned to a different account. No data was written.");
 	}
-	if (!pendingUsers.length) {
-		console.log(`All ${users.length} account(s) already exist with matching roles; no rows changed.`);
+
+	if (dryRun) {
+		console.log("Dry run passed: one existing administrator is valid, the approved project and backup match, and no ID/email conflicts were found. No data was written.");
 		return;
 	}
-	const response = await fetch(`${supabaseUrl}/rest/v1/site_users?on_conflict=id`, {
+
+	const response = await fetch(`${supabaseUrl}/rest/v1/site_users`, {
 		method: "POST",
 		headers: {
-			apikey: serviceRoleKey,
-			Authorization: `******`,
+			...requestHeaders,
 			"Content-Type": "application/json",
-			Prefer: "resolution=ignore-duplicates,return=minimal",
+			Prefer: "return=minimal",
 		},
-		body: JSON.stringify(pendingUsers),
+		body: JSON.stringify([admin]),
 	});
-	if (!response.ok) {
-		throw new Error(`Supabase account migration failed with HTTP ${response.status}.`);
+	if (response.status === 409) {
+		throw new Error("A conflicting account appeared during migration. No existing records were overwritten.");
 	}
-	console.log(`Added ${pendingUsers.length} missing account(s), retaining existing IDs and roles.`);
-	console.log("Existing sessions were not migrated; users must sign in again.");
+	if (!response.ok) {
+		throw new Error(`Supabase administrator migration failed with HTTP ${response.status}.`);
+	}
+	console.log("Added exactly one existing administrator, retaining its original identity and credentials.");
+	console.log("Existing sessions were not migrated; the administrator must sign in again.");
 }
 
 migrate().catch((error) => {
