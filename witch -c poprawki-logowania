@@ -1,0 +1,12 @@
+SUPABASE_SETUP.md
+account.js
+api/auth/[...path].js
+docs/DEPLOYMENT-STATUS.md
+package.json
+scripts/deploy-auth-schema.cjs
+scripts/migrate-auth-to-supabase.cjs
+scripts/promote-auth-admin.cjs
+server.cjs
+supabase/auth-schema.sql
+tests/auth-migration.test.cjs
+tests/auth-security.test.cjs
