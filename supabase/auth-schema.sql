@@ -52,7 +52,7 @@ create or replace function public.consume_site_auth_rate_limit(
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
 	v_count integer;
@@ -93,25 +93,46 @@ create or replace function public.create_site_user(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
 	v_user public.site_users%rowtype;
-	v_role text;
 begin
 	perform pg_advisory_xact_lock(681029, 42);
 	if exists (select 1 from public.site_users where email = lower(btrim(p_email))) then
 		return null;
 	end if;
 
-	v_role := case
-		when exists (select 1 from public.site_users where role = 'admin') then 'user'
-		else 'admin'
-	end;
-
 	insert into public.site_users (id, name, email, role, password_salt, password_hash)
-	values (p_id, btrim(p_name), lower(btrim(p_email)), v_role, p_salt, p_password_hash)
+	values (p_id, btrim(p_name), lower(btrim(p_email)), 'user', p_salt, p_password_hash)
 	returning * into v_user;
+
+	return jsonb_build_object(
+		'id', v_user.id,
+		'name', v_user.name,
+		'email', v_user.email,
+		'role', v_user.role
+	);
+end;
+$$;
+
+create or replace function public.promote_site_user_to_admin(p_email text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+	v_user public.site_users%rowtype;
+begin
+	update public.site_users
+	set role = 'admin'
+	where email = lower(btrim(p_email))
+	returning * into v_user;
+
+	if not found then
+		return null;
+	end if;
 
 	return jsonb_build_object(
 		'id', v_user.id,
@@ -132,7 +153,7 @@ create or replace function public.consume_site_password_reset(
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
 	v_reset public.site_password_reset_codes%rowtype;
@@ -171,7 +192,9 @@ $$;
 
 revoke all on function public.consume_site_auth_rate_limit(text, integer, integer) from public, anon, authenticated;
 revoke all on function public.create_site_user(uuid, text, text, text, text) from public, anon, authenticated;
+revoke all on function public.promote_site_user_to_admin(text) from public, anon, authenticated;
 revoke all on function public.consume_site_password_reset(text, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.consume_site_auth_rate_limit(text, integer, integer) to service_role;
 grant execute on function public.create_site_user(uuid, text, text, text, text) to service_role;
+grant execute on function public.promote_site_user_to_admin(text) to service_role;
 grant execute on function public.consume_site_password_reset(text, text, text, text, text) to service_role;

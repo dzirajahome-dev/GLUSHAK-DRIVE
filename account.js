@@ -44,16 +44,16 @@
 	function renderProfile() {
 		const user = state.user;
 		profileLabel.textContent = user ? user.name : text("profile");
-		profileName.textContent = user ? user.name : state.setupAvailable ? text("setup_available") : text("guest");
+		profileName.textContent = user ? user.name : text("guest");
 		profileRole.textContent = user
 			? user.role === "admin" ? text("role_admin") : user.email
-			: state.setupAvailable ? text("create_admin_hint") : text("not_logged_in");
+			: text("not_logged_in");
 		accountLink.hidden = !user;
 		studioLink.hidden = user?.role !== "admin";
 		messagesOpen.hidden = !user;
-		loginAction.hidden = Boolean(user) || state.setupAvailable;
+		loginAction.hidden = Boolean(user);
 		registerAction.hidden = false;
-		registerAction.textContent = text(state.setupAvailable ? "create_admin" : "add_account");
+		registerAction.textContent = text("add_account");
 		logoutAction.hidden = !user;
 		document.dispatchEvent(new CustomEvent("authchange", { detail: { user, setupAvailable: state.setupAvailable } }));
 	}
@@ -67,28 +67,25 @@
 	function setMode(mode) {
 		state.mode = mode;
 		const isRegister = mode === "register";
-		const firstAdmin = isRegister && state.setupAvailable;
 		nameField.hidden = !isRegister;
 		accountName.required = isRegister;
 		accountPassword.autocomplete = isRegister ? "new-password" : "current-password";
 		formError.hidden = true;
 		formError.textContent = "";
 		formTitle.textContent = isRegister
-			? firstAdmin ? text("auth_title_admin") : text("auth_title_register")
+			? text("auth_title_register")
 			: text("auth_title_login");
-		formEyebrow.textContent = firstAdmin ? text("auth_eyebrow_admin") : isRegister ? text("auth_eyebrow_register") : text("auth_eyebrow");
-		formHelp.textContent = firstAdmin
-			? text("auth_help_admin")
-			: isRegister
-				? state.user?.role === "admin"
-					? text("auth_help_register_admin")
-					: text("auth_help_register")
-				: text("auth_help_login");
+		formEyebrow.textContent = isRegister ? text("auth_eyebrow_register") : text("auth_eyebrow");
+		formHelp.textContent = isRegister
+			? state.user?.role === "admin"
+				? text("auth_help_register_admin")
+				: text("auth_help_register")
+			: text("auth_help_login");
 		submitButton.textContent = isRegister
-			? firstAdmin ? text("auth_submit_admin") : text("auth_submit_register")
+			? text("auth_submit_register")
 			: text("auth_submit_login");
-		modeSwitch.hidden = state.setupAvailable || Boolean(state.user);
-		resetOpenButton.hidden = isRegister || state.setupAvailable || Boolean(state.user);
+		modeSwitch.hidden = Boolean(state.user);
+		resetOpenButton.hidden = isRegister || Boolean(state.user);
 		modeSwitch.textContent = isRegister ? text("auth_switch_login") : text("auth_switch_register");
 		if (!dialog.open) dialog.showModal();
 		if (isRegister) accountName.focus();
@@ -120,7 +117,7 @@
 			renderProfile();
 			const authReason = new URLSearchParams(window.location.search).get("auth");
 			if (authReason) {
-				setMode(state.setupAvailable ? "register" : "login");
+				setMode("login");
 				if (authReason === "admin" && state.user?.role !== "admin") {
 					formError.textContent = text("admin_only");
 					formError.hidden = false;

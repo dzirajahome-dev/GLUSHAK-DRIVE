@@ -48,6 +48,10 @@ const secureCookies = process.env.SECURE_COOKIES === "true";
 const loopbackHosts = ["127.0.0.1", "::1", "localhost"];
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const configuredResetPepper = process.env.PASSWORD_RESET_PEPPER || "";
+const passwordResetPepper = configuredResetPepper.length >= 32
+	? configuredResetPepper
+	: supabaseServiceRoleKey || crypto.randomBytes(32).toString("hex");
 const supabaseOrdersEnabled = Boolean(supabaseUrl && supabaseServiceRoleKey);
 const gmailUser = process.env.GMAIL_USER || "";
 const gmailAppPassword = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s/g, "");
@@ -158,6 +162,8 @@ function isSameOriginMutation(request, pathname) {
 	if (!pathname.startsWith("/api/") || ["GET", "HEAD", "OPTIONS"].includes(request.method)) return true;
 	const hostHeader = request.headers.host;
 	if (typeof hostHeader !== "string") return false;
+	const fetchSite = request.headers["sec-fetch-site"];
+	if (fetchSite !== undefined && fetchSite !== "same-origin") return false;
 	const origin = request.headers.origin;
 	if (typeof origin !== "string" || origin.length === 0) {
 		return true;
@@ -170,8 +176,7 @@ function isSameOriginMutation(request, pathname) {
 	} catch {
 		return false;
 	}
-	const fetchSite = request.headers["sec-fetch-site"];
-	return fetchSite === undefined || fetchSite === "same-origin";
+	return true;
 }
 
 function sendJson(response, status, value) {
@@ -836,6 +841,10 @@ function hashPassword(password, salt) {
 	return crypto.scryptSync(password, salt, 64).toString("hex");
 }
 
+function hashPasswordResetCode(salt, code) {
+	return crypto.createHmac("sha256", passwordResetPepper).update(`${salt}:${code}`).digest("hex");
+}
+
 function passwordMatches(password, user) {
 	const candidate = Buffer.from(hashPassword(password, user.salt), "hex");
 	const expected = Buffer.from(user.passwordHash, "hex");
@@ -860,7 +869,7 @@ function handleAuthRequest(request, response, pathname) {
 		const user = getCurrentUser(request, accounts);
 		sendJson(response, 200, {
 			user: publicUser(user),
-			setupAvailable: !accounts.users.some((item) => item.role === "admin"),
+			setupAvailable: false,
 		});
 		return true;
 	}
@@ -926,7 +935,7 @@ function handleAuthRequest(request, response, pathname) {
 					passwordResetCodes.set(email, {
 						userId: user.id,
 						salt,
-						codeHash: crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex"),
+						codeHash: hashPasswordResetCode(salt, code),
 						expiresAt: Date.now() + 10 * 60 * 1000,
 						attempts: 0,
 					});
@@ -948,7 +957,7 @@ function handleAuthRequest(request, response, pathname) {
 			}
 
 			const reset = passwordResetCodes.get(email);
-			const candidateHash = crypto.createHash("sha256").update(`${reset?.salt || ""}:${code}`).digest();
+			const candidateHash = Buffer.from(hashPasswordResetCode(reset?.salt || "", code), "hex");
 			const expectedHash = Buffer.from(reset?.codeHash || "0".repeat(64), "hex");
 			const codeMatches = crypto.timingSafeEqual(candidateHash, expectedHash);
 			if (!reset || reset.expiresAt <= Date.now() || reset.attempts >= 5 || !codeMatches) {
@@ -1016,13 +1025,12 @@ function handleAuthRequest(request, response, pathname) {
 		}
 
 		const currentUser = getCurrentUser(request, accounts);
-		const role = accounts.users.some((user) => user.role === "admin") ? "user" : "admin";
 		const salt = crypto.randomBytes(16).toString("hex");
 		const user = {
 			id: crypto.randomUUID(),
 			name,
 			email,
-			role,
+			role: "user",
 			salt,
 			passwordHash: hashPassword(password, salt),
 			createdAt: new Date().toISOString(),

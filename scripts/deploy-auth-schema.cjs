@@ -6,6 +6,7 @@ const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const accessToken = process.env.SUPABASE_ACCESS_TOKEN || "";
 const backupPath = process.env.SUPABASE_AUTH_BACKUP_FILE || "";
 const schemaPath = path.join(__dirname, "..", "supabase", "auth-schema.sql");
+const workspace = path.resolve(__dirname, "..");
 
 if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl) || !accessToken) {
 	throw new Error("Set SUPABASE_URL and SUPABASE_ACCESS_TOKEN in the secure environment.");
@@ -21,10 +22,15 @@ if (process.env.SUPABASE_BACKUP_CONFIRMED !== "YES"
 	|| !backupPath || !fs.existsSync(backupPath) || fs.statSync(backupPath).size === 0) {
 	throw new Error("Verify the database backup, then set SUPABASE_BACKUP_CONFIRMED=YES and SUPABASE_AUTH_BACKUP_FILE.");
 }
+if (!path.isAbsolute(backupPath) || backupPath.toLowerCase().startsWith(`${workspace}${path.sep}`.toLowerCase())) {
+	throw new Error("Store the verified database backup outside the repository and provide its absolute path.");
+}
 const backupMetadataPath = `${backupPath}.metadata.json`;
 if (!fs.existsSync(backupMetadataPath)) throw new Error("The backup metadata file is missing.");
-const backupMetadata = JSON.parse(fs.readFileSync(backupMetadataPath, "utf8"));
-if (backupMetadata.projectRef !== projectRef || backupMetadata.size !== fs.statSync(backupPath).size) {
+const backupMetadataContents = fs.readFileSync(backupMetadataPath, "utf8").replace(/^\uFEFF/, "");
+const backupMetadata = JSON.parse(backupMetadataContents);
+if (backupMetadata.projectRef !== projectRef || backupMetadata.size !== fs.statSync(backupPath).size
+	|| !/^[a-f0-9]{64}$/i.test(backupMetadata.sha256 || "")) {
 	throw new Error("The verified backup does not match the selected Supabase project.");
 }
 

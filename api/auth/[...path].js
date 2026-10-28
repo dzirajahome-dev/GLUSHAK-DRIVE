@@ -28,6 +28,8 @@ function cookieValue(request, name) {
 function isSameOrigin(request) {
 	const host = request.headers.host;
 	if (typeof host !== "string") return false;
+	const fetchSite = request.headers["sec-fetch-site"];
+	if (fetchSite !== undefined && fetchSite !== "same-origin") return false;
 	const origin = request.headers.origin;
 	if (typeof origin !== "string" || origin.length === 0) return true;
 	try {
@@ -38,8 +40,7 @@ function isSameOrigin(request) {
 	} catch {
 		return false;
 	}
-	const fetchSite = request.headers["sec-fetch-site"];
-	return fetchSite === undefined || fetchSite === "same-origin";
+	return true;
 }
 
 function getSupabaseConfig() {
@@ -141,6 +142,10 @@ function hashToken(token) {
 	return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function hashPasswordResetCode(config, salt, code) {
+	return crypto.createHmac("sha256", config.key).update(`${salt}:${code}`).digest("hex");
+}
+
 function clientAddress(request) {
 	const address = request.headers["x-real-ip"] || request.headers["x-forwarded-for"] || "unknown";
 	return String(address).split(",")[0].trim().slice(0, 128) || "unknown";
@@ -192,11 +197,9 @@ async function handle(request, response, pathname) {
 	}
 
 	if (pathname === "/api/auth/me" && request.method === "GET") {
-		const admins = await supabaseRequest(config, "site_users?select=id&role=eq.admin&limit=1");
-		const setupAvailable = admins.length === 0 && process.env.AUTH_ALLOW_FIRST_ADMIN_SETUP === "true";
 		const token = cookieValue(request, sessionCookie);
 		if (!token) {
-			sendJson(response, 200, { user: null, setupAvailable });
+			sendJson(response, 200, { user: null, setupAvailable: false });
 			return;
 		}
 		const tokenHash = hashToken(token);
@@ -205,14 +208,14 @@ async function handle(request, response, pathname) {
 			`site_sessions?select=user_id&token_hash=eq.${encodeURIComponent(tokenHash)}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&limit=1`,
 		);
 		if (!sessions.length) {
-			sendJson(response, 200, { user: null, setupAvailable });
+			sendJson(response, 200, { user: null, setupAvailable: false });
 			return;
 		}
 		const users = await supabaseRequest(
 			config,
 			`site_users?select=id,name,email,role&id=eq.${encodeURIComponent(sessions[0].user_id)}&limit=1`,
 		);
-		sendJson(response, 200, { user: publicUser(users[0]), setupAvailable });
+		sendJson(response, 200, { user: publicUser(users[0]), setupAvailable: false });
 		return;
 	}
 
@@ -278,7 +281,7 @@ async function handle(request, response, pathname) {
 				email,
 				user_id: users[0].id,
 				salt,
-				code_hash: crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex"),
+				code_hash: hashPasswordResetCode(config, salt, code),
 				expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
 				attempts: 0,
 			};
@@ -329,7 +332,7 @@ async function handle(request, response, pathname) {
 			`site_password_reset_codes?select=salt&email=eq.${encodeURIComponent(email)}&limit=1`,
 		);
 		const salt = resetCodes[0]?.salt || "";
-		const codeHash = crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex");
+		const codeHash = hashPasswordResetCode(config, salt, code);
 		const newSalt = crypto.randomBytes(16).toString("hex");
 		const resetResult = await supabaseRequest(config, "rpc/consume_site_password_reset", {
 			method: "POST",
@@ -384,12 +387,6 @@ async function handle(request, response, pathname) {
 		|| !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254
 		|| password.length < 10 || password.length > 256) {
 		sendJson(response, 400, { error: "Wpisz nazwę, prawidłowy e-mail i hasło (co najmniej 10 znaków)." });
-		return;
-	}
-	const admins = await supabaseRequest(config, "site_users?select=id&role=eq.admin&limit=1");
-	const setupAvailable = admins.length === 0 && process.env.AUTH_ALLOW_FIRST_ADMIN_SETUP === "true";
-	if (admins.length === 0 && !setupAvailable) {
-		sendJson(response, 503, { error: "Rejestracja pierwszego administratora wymaga kontrolowanego uruchomienia przez administratora." });
 		return;
 	}
 	const salt = crypto.randomBytes(16).toString("hex");

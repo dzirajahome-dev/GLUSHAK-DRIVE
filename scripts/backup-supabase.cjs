@@ -30,6 +30,9 @@ if (backupPath.toLowerCase().startsWith(workspacePrefix)) {
 if (fs.existsSync(backupPath)) {
 	throw new Error("The requested backup file already exists; choose a new path.");
 }
+if (fs.existsSync(`${backupPath}.metadata.json`)) {
+	throw new Error("The requested backup metadata file already exists; choose a new path.");
+}
 
 async function backup() {
 	const connection = new URL(databaseUrl);
