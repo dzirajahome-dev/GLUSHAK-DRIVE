@@ -4,7 +4,9 @@ const crypto = require("node:crypto");
 
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const expectedAdminId = (process.env.SUPABASE_AUTH_ADMIN_ID || "").toLowerCase();
 const accountsFile = path.join(__dirname, "..", "users.json");
+const workspace = path.resolve(__dirname, "..");
 
 if (!supabaseUrl || !serviceRoleKey) {
 	throw new Error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before migrating accounts.");
@@ -19,14 +21,24 @@ if (process.env.SUPABASE_CONFIRM_PROJECT_REF !== projectRef) {
 if (process.env.SUPABASE_BACKUP_CONFIRMED !== "YES") {
 	throw new Error("Migration is paused. Set SUPABASE_BACKUP_CONFIRMED=YES only after verifying the backup and selected project.");
 }
+if (process.env.SUPABASE_AUTH_SOURCE_CONFIRMED !== "YES") {
+	throw new Error("Migration is paused. Confirm that users.json is the authoritative account source before migrating.");
+}
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(expectedAdminId)) {
+	throw new Error("Set SUPABASE_AUTH_ADMIN_ID to the privately verified ID of the existing administrator.");
+}
 const backupFile = process.env.SUPABASE_AUTH_BACKUP_FILE;
 if (!backupFile || !fs.existsSync(backupFile) || fs.statSync(backupFile).size === 0) {
 	throw new Error("Create and verify a non-empty database backup, then set SUPABASE_AUTH_BACKUP_FILE before migrating.");
 }
+if (!path.isAbsolute(backupFile) || backupFile.toLowerCase().startsWith(`${workspace}${path.sep}`.toLowerCase())) {
+	throw new Error("Store the verified database backup outside the repository and provide its absolute path.");
+}
 const backupMetadataFile = `${backupFile}.metadata.json`;
 if (!fs.existsSync(backupMetadataFile)) throw new Error("The database backup metadata file is missing.");
 const backupMetadata = JSON.parse(fs.readFileSync(backupMetadataFile, "utf8"));
-if (backupMetadata.projectRef !== projectRef || backupMetadata.size !== fs.statSync(backupFile).size) {
+if (backupMetadata.projectRef !== projectRef || backupMetadata.size !== fs.statSync(backupFile).size
+	|| !/^[a-f0-9]{64}$/i.test(backupMetadata.sha256 || "")) {
 	throw new Error("The verified backup does not match the selected Supabase project.");
 }
 
@@ -37,7 +49,7 @@ function loadUsers() {
 }
 
 function toDatabaseUser(user) {
-	if (!user || !/^[a-f0-9-]{36}$/i.test(user.id || "")
+	if (!user || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user.id || "")
 		|| typeof user.name !== "string" || user.name.trim().length < 2 || user.name.trim().length > 50
 		|| typeof user.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
 		|| !["user", "admin"].includes(user.role)
@@ -50,8 +62,8 @@ function toDatabaseUser(user) {
 		name: user.name.trim(),
 		email: user.email.trim().toLowerCase(),
 		role: user.role,
-		password_salt: user.salt,
-		password_hash: user.passwordHash,
+		password_salt: user.salt.toLowerCase(),
+		password_hash: user.passwordHash.toLowerCase(),
 		created_at: user.createdAt && !Number.isNaN(Date.parse(user.createdAt))
 			? new Date(user.createdAt).toISOString()
 			: new Date().toISOString(),
@@ -65,8 +77,13 @@ async function migrate() {
 		throw new Error("The database backup changed after verification; account migration is blocked.");
 	}
 	const users = loadUsers().map(toDatabaseUser);
-	if (users.filter((user) => user.role === "admin").length > 1) {
-		throw new Error("users.json contains more than one administrator; resolve this before migration.");
+	const admins = users.filter((user) => user.role === "admin");
+	if (admins.length !== 1 || admins[0].id.toLowerCase() !== expectedAdminId) {
+		throw new Error("The source must contain exactly one administrator matching SUPABASE_AUTH_ADMIN_ID; no accounts were migrated.");
+	}
+	if (new Set(users.map((user) => user.id.toLowerCase())).size !== users.length
+		|| new Set(users.map((user) => user.email)).size !== users.length) {
+		throw new Error("The account source contains duplicate IDs or emails; no accounts were migrated.");
 	}
 	if (!users.length) {
 		console.log("No accounts found in users.json; nothing to migrate.");
@@ -75,15 +92,16 @@ async function migrate() {
 	const pendingUsers = [];
 	for (const user of users) {
 		const existingById = await fetch(
-			`${supabaseUrl}/rest/v1/site_users?select=id,email,role&id=eq.${encodeURIComponent(user.id)}&limit=1`,
+			`${supabaseUrl}/rest/v1/site_users?select=id,email,role,password_salt,password_hash&id=eq.${encodeURIComponent(user.id)}&limit=1`,
 			{ headers: { apikey: serviceRoleKey, Authorization: `******` } },
 		);
 		if (!existingById.ok) throw new Error(`Could not check existing accounts (HTTP ${existingById.status}).`);
 		const idMatches = await existingById.json();
 		if (idMatches.length) {
 			const existing = idMatches[0];
-			if (existing.email !== user.email || existing.role !== user.role) {
-				throw new Error("An existing account has a conflicting email or role. No accounts were migrated.");
+			if (existing.email !== user.email || existing.role !== user.role
+				|| existing.password_salt !== user.password_salt || existing.password_hash !== user.password_hash) {
+				throw new Error("An existing account has conflicting identity, role, or credentials. No accounts were migrated.");
 			}
 			continue;
 		}
